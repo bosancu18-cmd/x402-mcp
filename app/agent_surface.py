@@ -414,7 +414,7 @@ def agent_card() -> dict[str, Any]:
             "description": (
                 "Inspect this host's A2A Protocol v1.0 Agent ID Card, MCP server card, "
                 "skills, and payment rails. Free. MCP tool: get_agent_card. "
-                f"HTTP: GET {base}/.well-known/agent-card.json."
+                f"Resource: x402://agent-card. HTTP: GET {base}/.well-known/agent-card.json."
             ),
             "tags": [
                 "agent-card",
@@ -424,6 +424,7 @@ def agent_card() -> dict[str, Any]:
                 "discovery",
                 "capabilities",
                 "catalog",
+                "free",
             ],
             "examples": [
                 "Get the full agent identity card and capability manifest",

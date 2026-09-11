@@ -184,6 +184,7 @@ def ledger(tmp_path, monkeypatch):
     d = tmp_path / "ledger"
     d.mkdir()
     monkeypatch.setattr(ledger_io, "LEDGER", d)
+    monkeypatch.setattr("app.ledger_store.ledger_store", None)
     return d
 
 

@@ -1218,6 +1218,7 @@ def get_tools_manifest_resource() -> str:
 def get_pricing_table_resource() -> str:
     from app.agent_surface import paid_resources
     from app.payment_rails import build_payment_rails
+    from app.config import settings
 
     return json.dumps(
         {

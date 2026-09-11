@@ -184,6 +184,7 @@ def isolated_swarm_registry(tmp_path_factory):
         tmp_path_factory.mktemp("swarm-registry") / "products.json"
     )
     swarm_registry._products.clear()
+    swarm_registry._settled_txs.clear()
     yield
     swarm_registry.persist_path = old_path
     swarm_registry._products = old_products

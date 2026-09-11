@@ -33,6 +33,10 @@ Live paid catalog — same price strings the machine catalog emits:
 | NYC HPD Violations Address | `GET /us/nyc/property-check` | `$0.01` |
 | Chicago Building Violations | `GET /us/chi/property-check` | `$0.01` |
 | Denver STR License Check | `GET /us/den/property-check` | `$0.01` |
+| Austin STR License Check | `GET /us/atx/property-check` | `$0.01` |
+| Miami STR/Certificate of Use Check | `GET /us/mia/property-check` | `$0.01` |
+| Atlanta STR License Check | `GET /us/atl/property-check` | `$0.01` |
+| San Diego STR License Check | `GET /us/sd/property-check` | `$0.01` |
 | SF Housing NOV Check | `GET /us/sf/property-check` | `$0.01` |
 | LA Code Enforcement Open | `GET /us/lax/property-check` | `$0.01` |
 | Boston Property Violations | `GET /us/bos/property-check` | `$0.01` |

@@ -35,6 +35,7 @@ def test_ledger_spend_empty(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
     actually used the thing.
     """
     monkeypatch.setattr(ledger_io, "LEDGER", tmp_path / "ledger")
+    monkeypatch.setattr("app.ledger_store.ledger_store", None)
 
     response = client.get("/ledger/spend")
     assert response.status_code == 200
@@ -52,6 +53,7 @@ def test_ledger_reads_jsonl(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
         encoding="utf-8",
     )
     monkeypatch.setattr(ledger_io, "LEDGER", ledger_dir)
+    monkeypatch.setattr("app.ledger_store.ledger_store", None)
     rows = ledger_io.read_ledger_rows("spend")
     assert len(rows) == 2
     assert rows[0]["ts"] == "2026-01-02"

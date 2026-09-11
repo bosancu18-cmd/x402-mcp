@@ -29,7 +29,7 @@ def test_us_cities_catalog_lists_mn_and_peers() -> None:
 
 
 def test_unknown_city_404() -> None:
-    response = client.get("/us/atl/property-check")
+    response = client.get("/us/zzz/property-check")
     assert response.status_code == 404
     assert response.json()["error"] == "unknown_city"
     assert "mn" in response.json()["known"]

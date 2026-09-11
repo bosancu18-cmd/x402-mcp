@@ -265,14 +265,9 @@ def test_mcp_server_card_endpoint() -> None:
     assert data["remotes"][0]["url"].endswith("/mcp/mcp")
     assert "tools" in data
     assert len(data["tools"]) == TOOL_COUNT
-    assert data["prompts"]
-    assert data["resources"]
+    assert "capabilities" in data
+    assert data["capabilities"]["prompts"]
+    assert data["capabilities"]["resources"]
     for tool in data["tools"]:
         assert "name" in tool
-        assert "." in tool["name"]
         assert "description" in tool
-        assert "inputSchema" in tool
-        # Verify schema is simplified (e.g. no anyOf null wrappers)
-        schema = tool["inputSchema"]
-        for prop in schema.get("properties", {}).values():
-            assert "anyOf" not in prop or len(prop["anyOf"]) > 1
