@@ -12,7 +12,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
-from app import stripe_payments, x402_services
+from app import x402_services
 from app.commerce import QuotaExceededError, quota_store
 from app.config import settings
 from app.models import (
@@ -63,7 +63,6 @@ INSTRUCTIONS = (
     "City path: city.list → city.sample → city.check. "
     "Pro quota: commerce.pro_requirements → pay → commerce.activate_pro. "
     "Credits: commerce.credits_requirements → pay → commerce.purchase_credits. "
-    "Fiat alternative: commerce.stripe_checkout. "
     "Public seller hosts have no spend key — probe tools still work; "
     "pay-and-fetch needs EVM_PRIVATE_KEY. Every tool response includes commerce meta."
 )
@@ -647,50 +646,6 @@ async def purchase_tool_credits(
         agent_id,
         lambda resolved: x402_services.purchase_tool_credits(
             payment_signature, payment_required, resolved, pack
-        ),
-    )
-
-
-@mcp.tool(
-    name="commerce.stripe_checkout",
-    title="Create Stripe checkout",
-    description=(
-        "Create a Stripe Checkout Session for Pro tier or tool credits (fiat rail). "
-        "Use when the buyer pays by card instead of USDC; webhook fulfills the grant."
-    ),
-    annotations=WRITE_PAYMENT,
-)
-async def create_stripe_checkout(
-    purpose: Desc[
-        str,
-        Field(
-            description=(
-                "Checkout purpose. Must be 'pro_tier_upgrade' or 'tool_credits'. "
-                "Default pro_tier_upgrade."
-            )
-        ),
-    ] = "pro_tier_upgrade",
-    credits: Desc[
-        int | None,
-        Field(description="Required when purpose is tool_credits. Example: 100."),
-    ] = None,
-    agent_id: Desc[
-        str | None,
-        Field(description="Agent identity the Stripe fulfillment will grant."),
-    ] = None,
-) -> str:
-    if purpose not in ("pro_tier_upgrade", "tool_credits"):
-        raise ValueError("purpose must be pro_tier_upgrade or tool_credits")
-
-    return await _execute_tool(
-        "commerce.stripe_checkout",
-        agent_id,
-        lambda resolved: _sync_result(
-            stripe_payments.create_checkout_session(
-                resolved,
-                purpose,  # type: ignore[arg-type]
-                credits=credits,
-            )
         ),
     )
 

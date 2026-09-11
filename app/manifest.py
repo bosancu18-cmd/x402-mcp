@@ -71,8 +71,6 @@ def build_mcp_manifest() -> dict:
             "ledger_spend": "/ledger/spend",
             "ledger_revenue": "/ledger/revenue",
             "seller_requirements": "/seller/requirements",
-            "stripe_checkout": "/stripe/checkout",
-            "stripe_webhook": "/stripe/webhook",
             "mcp_sse": "/mcp-sse/sse",
             "mcp_http": "/mcp/mcp",
         },

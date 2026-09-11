@@ -105,15 +105,7 @@ TOOL_SPECS: tuple[ToolSpec, ...] = (
         ),
         "tier": "free",
     },
-    {
-        "name": "commerce.stripe_checkout",
-        "description": (
-            "Create a Stripe Checkout Session for Pro tier or tool credits (fiat rail). "
-            "Use when the buyer pays by card instead of USDC; webhook fulfills the grant."
-        ),
-        "tier": "free",
-        "requires_env": ["STRIPE_SECRET_KEY"],
-    },
+
     {
         "name": "swarm.research",
         "description": (

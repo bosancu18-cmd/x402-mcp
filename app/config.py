@@ -113,11 +113,6 @@ class Settings(BaseSettings):
     # Networks routed to the CDP facilitator when CDP creds are set (comma-sep).
     cdp_networks: str = "eip155:8453"
 
-    # Stripe fiat payment rail (primary for card/bank checkout)
-    stripe_secret_key: str | None = None
-    stripe_webhook_secret: str | None = None
-    stripe_publishable_key: str | None = None
-
     # Mission-control dashboard: gate POST /seller/requirements (default read-only)
     dashboard_actions: bool = False
 

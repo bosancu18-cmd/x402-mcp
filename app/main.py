@@ -51,12 +51,6 @@ from app.probe_rate_limit import ProbeRateLimitExceeded, probe_rate_limiter
 from app.ssrf_guard import SSRFBlockedError, validate_probe_url
 from app.swarm import orchestrator as swarm_orchestrator
 from app.swarm.registry import swarm_registry
-from app.stripe_payments import (
-    StripeNotConfiguredError,
-    StripeWebhookError,
-    create_checkout_session,
-    handle_stripe_webhook,
-)
 from app import cache_warmer, demand, os_monitor, wallet_read, x402_services
 
 setup_logging()
@@ -271,20 +265,6 @@ class SwarmRunRequest(BaseModel):
         default=None,
         description="Spend on upstream inputs. Defaults to SWARM_ALLOW_PAID_INPUTS "
         "(off), in which case the cycle synthesizes from free inputs instead.",
-    )
-
-
-class StripeCheckoutRequest(BaseModel):
-    agent_id: str | None = Field(
-        default=None, description="Agent to credit; auto-generated if omitted"
-    )
-    purpose: Literal["pro_tier_upgrade", "tool_credits"] = Field(
-        description="Purchase type: pro tier or per-use tool credits"
-    )
-    credits: int | None = Field(
-        default=None,
-        ge=1,
-        description="Credits pack size when purpose is tool_credits",
     )
 
 
@@ -526,8 +506,8 @@ async def root(request: Request) -> HTMLResponse:
                 "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; "
                 "font-src 'self' data: https://fonts.gstatic.com; "
                 "img-src 'self' data: blob: android-webview-video-poster:; "
-                "connect-src 'self' ws: wss: https://api.stripe.com https://*.render.com; "
-                "frame-src 'self' https://js.stripe.com https://hooks.stripe.com; "
+                "connect-src 'self' ws: wss: https://*.render.com; "
+                "frame-src 'self'; "
                 "object-src 'none';"
             )
         }
@@ -608,7 +588,6 @@ async def health() -> dict:
         "x402_facilitator": _facilitator_url_for(revenue_network),
         "x402_facilitator_network": revenue_network,
         "wallet_configured": bool(settings.evm_private_key),
-        "stripe_configured": bool(settings.stripe_secret_key),
         "pay_to_configured": bool(settings.x402_pay_to_address),
     }
 
@@ -1197,18 +1176,8 @@ async def upgrade_info() -> dict:
         "upgrade_url": settings.upgrade_url,
         "tiers": manifest["tiers"],
         "payment_rails": rails,
-        "stripe": {
-            "checkout_endpoint": "/stripe/checkout",
-            "webhook_endpoint": "/stripe/webhook",
-            "mcp_tool": "commerce.stripe_checkout",
-            "flow": [
-                "1. POST /stripe/checkout or call commerce.stripe_checkout (MCP)",
-                "2. Redirect buyer to checkout_url and complete payment",
-                "3. Stripe webhook POST /stripe/webhook fulfills pro tier or credits",
-            ],
-        },
         "x402_coinbase": {
-            "status": "alternate_future_rail",
+            "status": "primary_rail",
             "facilitator_url": settings.x402_facilitator_url,
             "discovery_url": settings.cdp_discovery_url,
             "flow": [
@@ -1220,12 +1189,10 @@ async def upgrade_info() -> dict:
         "tool_credits": {
             "pack_size": settings.tool_credit_pack_size,
             "pack_price": settings.tool_credit_pack_price,
-            "stripe_tool": "commerce.stripe_checkout",
             "x402_payment_tool": "commerce.credits_requirements",
             "x402_purchase_tool": "commerce.purchase_credits",
         },
         "mcp_tools": {
-            "stripe": ["commerce.stripe_checkout"],
             "pro_upgrade_x402": ["commerce.pro_requirements", "commerce.activate_pro"],
             "tool_credits_x402": [
                 "commerce.credits_requirements",
@@ -1234,34 +1201,6 @@ async def upgrade_info() -> dict:
         },
         "manifest": "/.well-known/mcp",
     }
-
-
-@app.post("/stripe/checkout", response_model=None)
-async def stripe_checkout(body: StripeCheckoutRequest) -> dict:
-    """Create Stripe Checkout Session for pro tier or tool credits."""
-    try:
-        agent_id = quota_store.resolve_agent_id(body.agent_id)
-        return create_checkout_session(
-            agent_id,
-            body.purpose,
-            credits=body.credits,
-        )
-    except StripeNotConfiguredError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
-
-
-@app.post("/stripe/webhook")
-async def stripe_webhook(
-    request: Request,
-    stripe_signature: str | None = Header(default=None, alias="Stripe-Signature"),
-) -> JSONResponse:
-    """Accept Stripe webhooks; verify signature and fulfill commerce."""
-    payload = await request.body()
-    try:
-        result = handle_stripe_webhook(payload, stripe_signature)
-        return JSONResponse(status_code=200, content=result)
-    except StripeWebhookError as exc:
-        return JSONResponse(status_code=400, content={"error": str(exc)})
 
 
 @app.get("/mn/property-check/sample")

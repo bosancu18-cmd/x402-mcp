@@ -31,7 +31,6 @@ export type HealthResponse = {
   x402_facilitator: string;
   x402_facilitator_network: string;
   wallet_configured: boolean;
-  stripe_configured: boolean;
   pay_to_configured: boolean;
   ownership_proofs_configured?: boolean;
 };
