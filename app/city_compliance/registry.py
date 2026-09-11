@@ -6,18 +6,22 @@ from types import ModuleType
 from typing import Any
 
 from app.city_compliance.cities import (
+    atl,
+    atx,
     bos,
     chi,
     den,
     gain,
     kc,
     lax,
+    mia,
     mn,
     moco,
     nola,
     nyc,
     orl,
     phi,
+    sd,
     sea,
     sf,
 )
@@ -39,6 +43,10 @@ _MODULES: tuple[ModuleType, ...] = (
     moco,  # Montgomery County, MD
     gain,  # Gainesville, FL
     kc,  # Kansas City, MO
+    atx,  # Austin, TX
+    mia,  # Miami, FL
+    atl,  # Atlanta, GA
+    sd,  # San Diego, CA
 )
 
 CITIES: dict[str, ModuleType] = {m.SPEC.code: m for m in _MODULES}

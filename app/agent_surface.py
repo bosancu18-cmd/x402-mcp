@@ -225,8 +225,8 @@ def paid_resources() -> list[dict[str, Any]]:
             "network": None,
             "name": "US City Open-Data Compliance Network (catalog)",
             "what": "Free machine catalog of multi-city property compliance "
-            "endpoints (14 jurisdictions: mn, sea, nyc, chi, den, sf, lax, "
-            "bos, phi, orl, nola, moco, gain, kc): paid URLs, sample URLs, "
+            "endpoints (18 jurisdictions: mn, sea, nyc, chi, den, sf, lax, "
+            "bos, phi, orl, nola, moco, gain, kc, atx, mia, atl, sd): paid URLs, sample URLs, "
             "price, and open-data sources.",
             "params": {},
         },
@@ -306,7 +306,7 @@ def llms_txt() -> str:
         "",
         "1. **Zero-Risk Schema Verification**: Call any `/sample` endpoint (e.g. `/us/mn/property-check/sample`, `/us/cities`, or `/pulse`) at $0.00 to verify payload schema and parsing logic before spending funds.",
         "2. **High-ROI Economic Value**:",
-        "   - **US Multi-City Rental Diligence Pack ($1.50 USDC)**: Screen up to 5 properties across 14 municipal open data portals in one call. Saves $50-$200 in human diligence costs and eliminates uninsurable tenant/lease compliance risks.",
+        "   - **US Multi-City Rental Diligence Pack ($1.50 USDC)**: Screen up to 5 properties across 18 municipal open data portals in one call. Saves $50-$200 in human diligence costs and eliminates uninsurable tenant/lease compliance risks.",
         "   - **Single Property Compliance Check ($0.01 USDC)**: Sub-second live query of municipal ArcGIS/Socrata records for active rental licensing, building code violations, and condemnations.",
         "   - **Base Tx-Decision & Finality ($0.01 USDC)**: Live Base L2 EIP-1559 gas congestion intelligence. Saves 15-30% on transaction gas re-attempts and provides L1-finalized settlement assurances.",
         "3. **Gasless Buyer Settlement**: Buyers sign EIP-3009 `transferWithAuthorization` in USDC only; the relayer/facilitator sponsors all on-chain gas.",
@@ -927,9 +927,9 @@ def agents_json() -> dict[str, Any]:
             "id": "us-city-compliance-network",
             "name": "US City Open-Data Property Compliance Network",
             "description": f"Address-level housing license, building violation, and code compliance checks across {len(cities)} US jurisdictions.",
-            "roi_value_proposition": "Instant property compliance intelligence covering 14 metropolitan jurisdictions with zero setup.",
+            "roi_value_proposition": "Instant property compliance intelligence covering 18 metropolitan jurisdictions with zero setup.",
             "latency_sla": "p95 < 600ms",
-            "data_provenance": "Municipal open data portals (Minneapolis, Seattle, NYC, Chicago, Denver, SF, LA, Boston, Philly, Orlando, NOLA, MoCo, Gainesville, KC)",
+            "data_provenance": "Municipal open data portals (Minneapolis, Seattle, NYC, Chicago, Denver, SF, LA, Boston, Philly, Orlando, NOLA, MoCo, Gainesville, KC, Austin, Miami, Atlanta, San Diego)",
             "catalog_url": f"{base}/us/cities",
             "method": "GET",
             "pricing": {
@@ -1036,7 +1036,7 @@ def ai_plugin_json() -> dict[str, Any]:
         ),
         "description_for_model": (
             "Autonomous agent interface for instant $0.01-$1.50 USDC pay-per-call data services. "
-            "Includes US 14-city property compliance screening (code violations, rental licenses, condemnation), "
+            "Includes US 18-city property compliance screening (code violations, rental licenses, condemnation), "
             "live Base mainnet EIP-1559 gas decision optimization, and multi-address rental diligence packs. "
             "Payments settle gaslessly on Base (eip155:8453) using HTTP 402 and EIP-3009 transfer authorizations. "
             "Provides free sample endpoints for shape verification before executing paid lookups."
