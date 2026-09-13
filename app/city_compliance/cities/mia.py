@@ -32,6 +32,7 @@ SPEC = CitySpec(
         "Any other Miami address requires payment."
     ),
     sources_label="Miami ArcGIS — Certificates of Use (Placeholder)",
+    public=False,
 )
 
 _CACHE_TTL = 900

@@ -55,6 +55,22 @@ Cite these; do not improvise around them.
 
 **ERC-8004** is a Draft and explicitly states payments are out of scope. It is not a dependency for payment correctness. Do not put it on a critical path.
 
+# Verified ground truth (2026-09-13 refresh)
+
+Cite these alongside the 2026-08 block. The portable system prompt is `AGENTS.md` (X402-Profit-Forge).
+
+**Docs host.** Canonical buyer/seller MCP guide is `https://docs.x402.org/guides/mcp-server-with-x402`. Bazaar spec: `https://docs.x402.org/extensions/bazaar`. CDP MCP loop: `https://docs.cdp.coinbase.com/x402/buyer/mcp-payments`.
+
+**`paidTool` is Cloudflare-only.** `this.server.paidTool(...)` + `withX402` live in `agents/x402`. They are **not** `@x402/mcp` exports. `@x402/mcp` server wrap is `createPaymentWrapper`; client wrap is `wrapMCPClientWithPayment`. Bazaar MCP metadata is `declareDiscoveryExtension` from `@x402/extensions/bazaar`.
+
+**Bazaar MCP server (free search).** `https://api.cdp.coinbase.com/platform/v2/x402/discovery/mcp` — `search_resources`, `validate_endpoint` (no spend), `proxy_tool_call` (can spend).
+
+**This origin was not on the first page of CDP discovery/resources and did not appear in an x402scan search for `x402-mcp.onrender.com` (Chrome, 2026-09-13).** Treat as likely 30-day idle delist. Probes from `CoinbaseBazaarDiscovery/1.0` ≠ indexed listing.
+
+**x402scan Past 30 Days (Chrome):** 30.47M tx, $1.36M volume, 20.25K buyers, 17K sellers. Leaders are resold inference (BlockRun).
+
+**Stale notes, re-verified:** finality now ledgers via `on_after_settle`. Live `/demand` 2026-09-13: finality 64 ext / 1.17% / $0.564 (best converter). `/stats` prod still 500. All 22 MCP tools are `tier: "free"`. Diligence description still lists 14 cities vs 18 live; `mia`/`atl` are placeholder/no-feed.
+
 # The economics you price against
 
 Internalize these. They are why most suggestions in this space are worthless.

@@ -81,6 +81,29 @@ def test_request_validation_city_and_cap() -> None:
         {"properties": [{"city_code": "MN", "address": " 1700 Penn Ave N "}]}
     )
     assert ok.properties[0].city_code == "mn"
+    for unpublished in ("mia", "atl"):
+        with pytest.raises(Exception):
+            diligence_pack.DiligencePackRequest.model_validate(
+                {"properties": [{"city_code": unpublished, "address": "1 Main"}]}
+            )
+    for public in ("atx", "sd"):
+        ok_pub = diligence_pack.DiligencePackRequest.model_validate(
+            {"properties": [{"city_code": public, "address": "1 Main"}]}
+        )
+        assert ok_pub.properties[0].city_code == public
+
+
+def test_resource_description_matches_public_city_set() -> None:
+    from app.city_compliance.registry import public_codes
+
+    codes = public_codes()
+    desc = diligence_pack.RESOURCE_DESCRIPTION
+    assert len(desc) <= 500
+    listed = desc.split("Portfolio screen across ", 1)[1].split(". Not the", 1)[0]
+    assert listed.split() == list(codes)
+    assert "mia" not in listed.split()
+    assert "atl" not in listed.split()
+    assert "atx" in listed.split() and "sd" in listed.split()
 
 
 def test_risk_summary_mixed() -> None:

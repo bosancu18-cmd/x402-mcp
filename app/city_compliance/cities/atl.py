@@ -24,6 +24,7 @@ SPEC = CitySpec(
         "currently lacks an open data feed for STRs."
     ),
     sources_label="City of Atlanta (No open data feed available)",
+    public=False,
 )
 
 _CACHE_TTL = 900

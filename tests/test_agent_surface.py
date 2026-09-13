@@ -120,8 +120,10 @@ def test_agent_card_is_served_at_well_known() -> None:
     # Every live city in the registry is a skill for discovery ranking.
     from app.city_compliance import registry
 
-    for code in registry.known_codes():
+    for code in registry.public_codes():
         assert any(s["id"] == f"property-check-{code}" for s in body["skills"]), code
+    for code in set(registry.known_codes()) - set(registry.public_codes()):
+        assert not any(s["id"] == f"property-check-{code}" for s in body["skills"]), code
     # Catalog URL is a supported interface.
     urls = [i["url"] for i in body["supportedInterfaces"]]
     assert any(u.endswith("/us/cities") for u in urls)

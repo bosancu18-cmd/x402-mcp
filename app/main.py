@@ -680,7 +680,17 @@ async def stats_snapshot() -> dict:
     now = datetime.now()
     if _stats_cache["time"] and now - _stats_cache["time"] < timedelta(seconds=10):
         return _stats_cache["data"]
-    data = quota_store.snapshot()
+    try:
+        data = quota_store.snapshot()
+    except Exception:
+        logger.exception("GET /stats snapshot failed")
+        data = {
+            "agents": [],
+            "config": {
+                "redis_mode": getattr(quota_store, "mode", "unknown"),
+                "snapshot_degraded": True,
+            },
+        }
     _stats_cache["time"] = now
     _stats_cache["data"] = data
     return data

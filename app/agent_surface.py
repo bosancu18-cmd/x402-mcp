@@ -105,6 +105,24 @@ def ownership_proofs() -> list[str]:
     return [p.strip() for p in settings.ownership_proofs.split(",") if p.strip()]
 
 
+def _us_city_catalog_what(base: str) -> str:
+    """Catalog blurb derived from the public city set so it cannot drift."""
+    try:
+        from app.city_compliance import registry
+    except Exception:  # pragma: no cover
+        return (
+            "Free machine catalog of multi-city property compliance endpoints: "
+            f"paid URLs, sample URLs, price, and open-data sources. {base}/us/cities."
+        )
+    codes = registry.public_codes()
+    listed = ", ".join(codes)
+    return (
+        f"Free machine catalog of multi-city property compliance "
+        f"endpoints ({len(codes)} jurisdictions: {listed}): paid URLs, sample URLs, "
+        "price, and open-data sources."
+    )
+
+
 def _us_city_paid_resources(base: str) -> list[dict[str, Any]]:
     """US multi-city network resources (includes MN network path + samples)."""
     try:
@@ -224,10 +242,7 @@ def paid_resources() -> list[dict[str, Any]]:
             "price": "free",
             "network": None,
             "name": "US City Open-Data Compliance Network (catalog)",
-            "what": "Free machine catalog of multi-city property compliance "
-            "endpoints (18 jurisdictions: mn, sea, nyc, chi, den, sf, lax, "
-            "bos, phi, orl, nola, moco, gain, kc, atx, mia, atl, sd): paid URLs, sample URLs, "
-            "price, and open-data sources.",
+            "what": _us_city_catalog_what(base),
             "params": {},
         },
         *_us_city_paid_resources(base),

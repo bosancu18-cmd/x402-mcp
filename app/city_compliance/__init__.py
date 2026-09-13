@@ -7,6 +7,11 @@ Each city joins public open-data sources into one agent-readable report.
 Routes live under ``/us/{city}/property-check`` (+ free ``/sample``).
 """
 
-from app.city_compliance.registry import CITIES, get_city, list_cities
+from app.city_compliance.registry import (
+    CITIES,
+    get_city,
+    list_cities,
+    public_codes,
+)
 
-__all__ = ["CITIES", "get_city", "list_cities"]
+__all__ = ["CITIES", "get_city", "list_cities", "public_codes"]

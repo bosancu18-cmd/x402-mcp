@@ -59,13 +59,22 @@ def get_city(code: str) -> ModuleType:
     return CITIES[key]
 
 
+def public_modules() -> tuple[ModuleType, ...]:
+    """Catalog / diligence / discovery set. Unpublished cities stay mounted."""
+    return tuple(m for m in _MODULES if getattr(m.SPEC, "public", True))
+
+
+def public_codes() -> tuple[str, ...]:
+    return tuple(m.SPEC.code for m in public_modules())
+
+
 def list_cities() -> list[dict[str, Any]]:
     from app.city_compliance import gate
     from app.config import settings
 
     base = settings.public_base_url.rstrip("/")
     out: list[dict[str, Any]] = []
-    for mod in _MODULES:
+    for mod in public_modules():
         spec: CitySpec = mod.SPEC
         out.append(
             {

@@ -24,6 +24,7 @@ class CitySpec:
     sources_label: str  # short attribution for free catalog
     price_setting: str = "city_network_price"  # settings attr name
     product_id_prefix: str = "us-city"  # demand + ledger key prefix
+    public: bool = True  # False → mounted (402) but omitted from catalogs
 
 
 def base_report(

@@ -62,6 +62,24 @@ Cite these; do not improvise around them.
 
 **ERC-8004** is a Draft and explicitly states payments are out of scope. It is not a dependency for payment correctness. Do not put it on a critical path.
 
+# Verified ground truth (2026-09-13 refresh)
+
+Cite these alongside the 2026-08 block. The portable system prompt is `AGENTS.md` (X402-Profit-Forge).
+
+**Docs host.** Canonical buyer/seller MCP guide is `https://docs.x402.org/guides/mcp-server-with-x402` (also still mirrored on gitbook). Bazaar spec: `https://docs.x402.org/extensions/bazaar`. CDP MCP loop: `https://docs.cdp.coinbase.com/x402/buyer/mcp-payments`.
+
+**`paidTool` is Cloudflare-only.** `this.server.paidTool(...)` + `withX402` live in `agents/x402` ([Cloudflare charge-for-mcp-tools](https://developers.cloudflare.com/agents/tools/payments/x402/charge-for-mcp-tools/), updated 2026-06-03). They are **not** `@x402/mcp` exports. `@x402/mcp` server wrap is `createPaymentWrapper`; client wrap is `wrapMCPClientWithPayment`. Bazaar MCP metadata is `declareDiscoveryExtension` from `@x402/extensions/bazaar`. Default Cloudflare sample facilitator `https://x402.org/facilitator` is testnet — same trap as `HTTPFacilitatorClient()`.
+
+**Bazaar MCP server (free search).** `https://api.cdp.coinbase.com/platform/v2/x402/discovery/mcp` — `search_resources`, `validate_endpoint` (no spend), `proxy_tool_call` (can spend).
+
+**This origin was not on the first page of** `GET /platform/v2/x402/discovery/resources` **and did not appear in an x402scan search for `x402-mcp.onrender.com` (Chrome, 2026-09-13).** Treat as likely 30-day idle delist. CoinbaseBazaarDiscovery/1.0 still *probes* (see `/demand` user agents) — probes ≠ indexed listing. Re-index requires an operator mainnet settle; you still never run it.
+
+**x402scan market (Chrome, Past 30 Days widget):** 30.47M tx, $1.36M volume, 20.25K buyers, 17K sellers. Featured leaders are resold inference (BlockRun $285K / 22M tx on Solana). Confirms PRODUCT-FOCUS: access-barrier / cost-basis products, not free-RPC arithmetic.
+
+**x402scan register path** (operator-approved only): OpenAPI at `/openapi.json` with `x-payment-info` + `responses.402` (this repo already emits both in `app/openapi_spec.py`) then `POST https://x402scan.com/api/x402/registry/register-origin`. Do not register without an explicit yes.
+
+**Stale oracle notes, re-verified:** `/base/finality-check` now records via `x402ResourceServer.on_after_settle` (`app/x402_middleware_pilot.py:25-38`). Live `/demand` 2026-09-13: 5,489 challenges / 64 external / **1.17%** / $0.564 — best converting SKU. `/stats` on prod still **500** (dashboard blank until Render redeploy of the snapshot-cap fix). All 22 MCP tools are `tier: "free"` in `app/tools_registry.py` — HTTP is paid, MCP `tools/list` is not a paid surface. Diligence `RESOURCE_DESCRIPTION` still names 14 cities while `/us/cities` lists 18; `mia`/`atl` advertise placeholder / no feed. `TOOL_COUNT` remains the canonical tool count.
+
 # The economics you price against
 
 Internalize these. They are why most suggestions in this space are worthless.

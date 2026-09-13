@@ -279,43 +279,48 @@ class InMemoryQuotaStore:
         agent_ids.update(self._agent_ids.values())
         return agent_ids
 
+    SNAPSHOT_AGENT_LIMIT = 32
+
+    def _stats_config(self, *, degraded: bool = False) -> dict:
+        config = {
+            "free_tier_monthly_quota": settings.free_tier_monthly_quota,
+            "free_tier_rate_limit_per_min": settings.free_tier_rate_limit_per_min,
+            "pro_tier_monthly_quota": settings.pro_tier_monthly_quota,
+            "pro_tier_rate_limit_per_min": settings.pro_tier_rate_limit_per_min,
+            "pro_tier_price": settings.pro_tier_price,
+            "tool_credit_pack_size": settings.tool_credit_pack_size,
+            "tool_credit_pack_price": settings.tool_credit_pack_price,
+            "x402_default_network": settings.x402_default_network,
+            "has_pay_to": bool(settings.x402_pay_to_address),
+            "has_buyer_key": bool(settings.evm_private_key),
+            "redis_mode": self.mode,  # actual live store, not the env var
+            "network": settings.x402_default_network,
+            # Stripe rails were removed; getattr keeps /stats alive if an
+            # old client still expects this key.
+            "stripe_configured": bool(getattr(settings, "stripe_secret_key", None)),
+        }
+        if degraded:
+            config["snapshot_degraded"] = True
+        return config
+
+    def _agent_row(self, snap: QuotaSnapshot) -> dict:
+        return {
+            "agent_id": snap.agent_id,
+            "tier": snap.tier,
+            "calls_this_month": snap.calls_this_month,
+            "quota_remaining": snap.quota_remaining,
+            "quota_warning": snap.quota_warning,
+            "rate_limit_remaining": snap.rate_limit_remaining,
+            "tool_credits_remaining": snap.tool_credits_remaining,
+        }
+
     def snapshot(self) -> dict:
         """Public aggregate for GET /stats — no private field access from routes."""
-        agent_ids = self._snapshot_agent_ids()
-
+        agent_ids = sorted(self._snapshot_agent_ids())[: self.SNAPSHOT_AGENT_LIMIT]
         agents = []
-        for agent_id in sorted(agent_ids):
-            snap = self.peek(agent_id)
-            agents.append(
-                {
-                    "agent_id": snap.agent_id,
-                    "tier": snap.tier,
-                    "calls_this_month": snap.calls_this_month,
-                    "quota_remaining": snap.quota_remaining,
-                    "quota_warning": snap.quota_warning,
-                    "rate_limit_remaining": snap.rate_limit_remaining,
-                    "tool_credits_remaining": snap.tool_credits_remaining,
-                }
-            )
-
-        return {
-            "agents": agents,
-            "config": {
-                "free_tier_monthly_quota": settings.free_tier_monthly_quota,
-                "free_tier_rate_limit_per_min": settings.free_tier_rate_limit_per_min,
-                "pro_tier_monthly_quota": settings.pro_tier_monthly_quota,
-                "pro_tier_rate_limit_per_min": settings.pro_tier_rate_limit_per_min,
-                "pro_tier_price": settings.pro_tier_price,
-                "tool_credit_pack_size": settings.tool_credit_pack_size,
-                "tool_credit_pack_price": settings.tool_credit_pack_price,
-                "x402_default_network": settings.x402_default_network,
-                "has_pay_to": bool(settings.x402_pay_to_address),
-                "has_buyer_key": bool(settings.evm_private_key),
-                "redis_mode": self.mode,  # actual live store, not the env var
-                "network": settings.x402_default_network,
-                "stripe_configured": bool(settings.stripe_secret_key),
-            },
-        }
+        for agent_id in agent_ids:
+            agents.append(self._agent_row(self.peek(agent_id)))
+        return {"agents": agents, "config": self._stats_config()}
 
     def peek(self, agent_id: str) -> QuotaSnapshot:
         now = time.time()
@@ -428,14 +433,45 @@ class RedisQuotaStore(InMemoryQuotaStore):
     def _check_and_mark_fulfilled(self, fulfillment_key: str) -> bool:
         return bool(self._client.set(f"stripe:fulfilled:{fulfillment_key}", "1", nx=True))
 
+    def snapshot(self) -> dict:
+        """Bound Redis work so crawler agent keys cannot 500 GET /stats."""
+        try:
+            agent_ids = sorted(self._snapshot_agent_ids())[: self.SNAPSHOT_AGENT_LIMIT]
+            agents = []
+            for agent_id in agent_ids:
+                try:
+                    agents.append(self._agent_row(self.peek(agent_id)))
+                except Exception:
+                    logger.exception("quota peek failed for %s", agent_id)
+            return {"agents": agents, "config": self._stats_config()}
+        except Exception:
+            logger.exception("Redis quota snapshot failed")
+            return {"agents": [], "config": self._stats_config(degraded=True)}
+
     def _snapshot_agent_ids(self) -> set[str]:
+        try:
+            return self._scan_agent_ids()
+        except Exception:
+            logger.exception(
+                "Redis quota snapshot scan failed; using in-process agent ids only"
+            )
+            return set(self._windows) | set(self._agent_ids.values())
+
+    def _scan_agent_ids(self) -> set[str]:
+        limit = self.SNAPSHOT_AGENT_LIMIT
         agent_ids: set[str] = set(self._windows)
         agent_ids.update(self._agent_ids.values())
+        if len(agent_ids) >= limit:
+            return agent_ids
         for pattern, suffix in (("agent:*:tier", ":tier"), ("agent:*:credits", ":credits")):
-            for key in self._client.scan_iter(match=pattern):
+            for key in self._client.scan_iter(match=pattern, count=64):
                 agent_ids.add(key[len("agent:"): -len(suffix)])
-        for key in self._client.scan_iter(match="agent:*:month:*"):
+                if len(agent_ids) >= limit:
+                    return agent_ids
+        for key in self._client.scan_iter(match="agent:*:month:*", count=64):
             agent_ids.add(key[len("agent:"):].rsplit(":month:", 1)[0])
+            if len(agent_ids) >= limit:
+                return agent_ids
         return agent_ids
 
 

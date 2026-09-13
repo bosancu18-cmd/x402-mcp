@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from app import commerce
 from app.commerce import InMemoryQuotaStore
 from app.main import app
 from app import ledger_io
@@ -24,6 +25,28 @@ def test_stats_snapshot() -> None:
     assert "agents" in body
     assert "config" in body
     assert body["config"]["free_tier_monthly_quota"] == 500
+
+
+def test_snapshot_survives_removed_stripe_settings() -> None:
+    """Stripe rails were deleted; /stats must not AttributeError on the old field."""
+
+    class SettingsProxy:
+        def __init__(self, inner: object) -> None:
+            self._inner = inner
+
+        def __getattr__(self, name: str) -> object:
+            if name == "stripe_secret_key":
+                raise AttributeError(name)
+            return getattr(self._inner, name)
+
+    original = commerce.settings
+    commerce.settings = SettingsProxy(original)  # type: ignore[assignment]
+    try:
+        snap = InMemoryQuotaStore().snapshot()
+    finally:
+        commerce.settings = original
+    assert "agents" in snap
+    assert snap["config"]["stripe_configured"] is False
 
 
 def test_ledger_spend_empty(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

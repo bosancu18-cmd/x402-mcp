@@ -20,6 +20,7 @@ import { explain } from "./glossary";
 import { useSSE, type StreamEvent } from "./hooks/useSSE";
 import { downloadText, ledgerToCsv } from "./utils/ledger";
 import { calculateFinances } from "./utils/finance";
+import { refreshErrors, settledSlice } from "./utils/refreshLoad";
 import { deriveMissionSteps } from "./utils/mission";
 import { formatUsdcAtomic } from "./utils/usdc";
 import { relativeTime } from "./utils/time";
@@ -270,8 +271,8 @@ export default function App() {
       setError(null);
       return;
     }
-    try {
-      const [s, d, sp, rev, w, pr, srev, sass, tel] = await Promise.all([
+    const [sRes, dRes, spRes, revRes, wRes, prRes, srevRes, sassRes, telRes] =
+      await Promise.allSettled([
         api.stats(),
         api.doctor(),
         api.ledgerSpend(),
@@ -282,32 +283,40 @@ export default function App() {
         api.swarmAssessment(),
         api.telemetry(),
       ]);
-      setStats(s);
-      setDoctor(d.checks);
-      setSpend(sp);
-      setRevenue(rev);
-      setWallet(w);
-      setProducts(pr);
-      setSwarmRevenue(srev);
-      setSwarmAssessment(sass);
-      setTelemetry(tel);
-      api.pulse().then(setPulse).catch(() => {});
-      api.os().then(setOs).catch(() => {});
-      const rateRemaining = s.agents.length
-        ? Math.min(...s.agents.map((a) => a.rate_limit_remaining))
+    const s = settledSlice(sRes);
+    const d = settledSlice(dRes);
+    const sp = settledSlice(spRes);
+    const rev = settledSlice(revRes);
+    const w = settledSlice(wRes);
+    const pr = settledSlice(prRes);
+    const srev = settledSlice(srevRes);
+    const sass = settledSlice(sassRes);
+    const tel = settledSlice(telRes);
+    if (s.ok) setStats(s.value);
+    if (d.ok) setDoctor(d.value.checks);
+    if (sp.ok) setSpend(sp.value);
+    if (rev.ok) setRevenue(rev.value);
+    if (w.ok) setWallet(w.value);
+    if (pr.ok) setProducts(pr.value);
+    if (srev.ok) setSwarmRevenue(srev.value);
+    if (sass.ok) setSwarmAssessment(sass.value);
+    if (tel.ok) setTelemetry(tel.value);
+    api.pulse().then(setPulse).catch(() => {});
+    api.os().then(setOs).catch(() => {});
+    if (s.ok) {
+      const rateRemaining = s.value.agents.length
+        ? Math.min(...s.value.agents.map((a) => a.rate_limit_remaining))
         : 10;
       setRateHistory((prev) => [...prev, rateRemaining].slice(-24));
-      setError(null);
-      const totalCalls = s.agents.reduce((n, a) => n + a.calls_this_month, 0);
+      const totalCalls = s.value.agents.reduce((n, a) => n + a.calls_this_month, 0);
       if (prevCalls != null && totalCalls < prevCalls) {
         setResetToast(true);
         setTimeout(() => setResetToast(false), 5000);
       }
       setPrevCalls(totalCalls);
-      if (!d.summary.ready) setWizardOpen(true);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to reach API — run `make up`");
     }
+    if (d.ok && !d.value.summary.ready) setWizardOpen(true);
+    setError(refreshErrors([s, d, sp, rev, w, pr, srev, sass, tel]));
   }, [demo, prevCalls]);
 
   const onEvent = useCallback((e: StreamEvent) => {
@@ -449,6 +458,12 @@ export default function App() {
           <p>Dashboard can&apos;t reach the server at {import.meta.env.VITE_PUBLIC_API_BASE_URL || "/api"}.</p>
           {error && <p style={{ color: "var(--text-muted)", fontSize: 12 }}>{error}</p>}
           <button type="button" onClick={reconnect} style={{ marginTop: 8 }}>Retry Connection</button>
+        </div>
+      )}
+      {error && serverStatus !== "disconnected" && (
+        <div className="panel" style={{ margin: 8, borderColor: "var(--amber)" }}>
+          <strong>Partial API load</strong>
+          <p style={{ color: "var(--text-muted)", fontSize: 12 }}>{error}</p>
         </div>
       )}
 

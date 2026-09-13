@@ -140,6 +140,22 @@ def test_snapshot_reports_actual_redis_mode(
     assert agent["calls_this_month"] == 1
 
 
+def test_snapshot_degrades_instead_of_raising(
+    fake_server: fakeredis.FakeServer,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    store = RedisQuotaStore(_fake_client(fake_server))
+    monkeypatch.setattr(
+        store,
+        "_snapshot_agent_ids",
+        lambda: (_ for _ in ()).throw(RuntimeError("scan exploded")),
+    )
+    snap = store.snapshot()
+    assert snap["agents"] == []
+    assert snap["config"]["redis_mode"] == "redis"
+    assert snap["config"]["snapshot_degraded"] is True
+
+
 # -- /doctor reports the ACTUAL store mode, not the env var --------------------
 
 

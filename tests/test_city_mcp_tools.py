@@ -158,3 +158,10 @@ def test_city_tools_in_registry() -> None:
         "city.check",
     ):
         assert name in EXPECTED_TOOL_NAMES
+
+
+def test_city_check_description_advertises_price() -> None:
+    from app.tools_registry import TOOL_SPECS
+
+    spec = next(s for s in TOOL_SPECS if s["name"] == "city.check")
+    assert "Price: $0.01 per call (x402, USDC on Base/Solana/Arbitrum)." in spec["description"]

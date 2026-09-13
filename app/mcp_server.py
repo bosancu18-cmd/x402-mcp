@@ -879,7 +879,8 @@ async def get_us_city_property_sample(
     title="Paid US city property check",
     description=(
         "Run a paid US city property compliance check via x402 on the same HTTP resource buyers use. "
-        "Prefer city.sample first. Settles USDC when EVM_PRIVATE_KEY is set; otherwise returns a 402 probe."
+        "Prefer city.sample first. Settles USDC when EVM_PRIVATE_KEY is set; otherwise returns a 402 probe. "
+        "Price: $0.01 per call (x402, USDC on Base/Solana/Arbitrum)."
     ),
     annotations=WRITE_PAYMENT,
 )

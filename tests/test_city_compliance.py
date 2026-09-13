@@ -20,12 +20,28 @@ def test_us_cities_catalog_lists_mn_and_peers() -> None:
     body = response.json()
     assert body["network"] == "us-city-open-data-compliance"
     codes = {c["code"] for c in body["cities"]}
-    assert codes == set(registry.known_codes())
+    assert codes == set(registry.public_codes())
+    assert "mia" not in codes and "atl" not in codes
     assert "mn" in codes and "nola" in codes and "moco" in codes
     mn = next(c for c in body["cities"] if c["code"] == "mn")
     assert mn["state"] == "MN"
     assert mn["canonical_alias"] == "/mn/property-check"
     assert mn["paid_url"].endswith("/us/mn/property-check")
+
+
+def test_placeholder_cities_stay_mounted_but_off_catalog(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """mia/atl keep HTTP 402 bookmarks; they must not appear in discovery."""
+    monkeypatch.setattr(settings, "x402_pay_to_address", TEST_PAY_TO)
+    catalog = {c["code"] for c in client.get("/us/cities").json()["cities"]}
+    assert "mia" not in catalog and "atl" not in catalog
+    for code in ("mia", "atl"):
+        assert code in registry.known_codes()
+        assert code not in registry.public_codes()
+        response = client.get(f"/us/{code}/property-check")
+        assert response.status_code == 402, code
+        assert "PAYMENT-REQUIRED" in response.headers
 
 
 def test_unknown_city_404() -> None:
