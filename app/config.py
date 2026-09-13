@@ -1,5 +1,6 @@
 """Application configuration."""
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -43,6 +44,15 @@ class Settings(BaseSettings):
     # Seller (cold receive) — on-chain payTo for revenue. Prefer separate from buyer.
     # Live cashier is 0x8A897D546c22d726b45Fa25F0EBB56207E63fF4e (DEFAULT_PAY_TO).
     x402_pay_to_address: str | None = None
+
+    @field_validator("x402_pay_to_address", mode="before")
+    @classmethod
+    def _strip_pay_to_address(cls, value: object) -> str | None:
+        """Render's env textarea appends a trailing newline; bake that into payTo and CDP rejects."""
+        if value is None:
+            return None
+        stripped = str(value).strip()
+        return stripped or None
     # Base Network Pulse synthesis inputs (real data sources).
     base_rpc_url: str = "https://mainnet.base.org"
     eth_price_url: str = "https://api.coinbase.com/v2/prices/ETH-USD/spot"

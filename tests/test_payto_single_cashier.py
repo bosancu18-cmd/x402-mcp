@@ -8,6 +8,7 @@ import yaml
 from fastapi.testclient import TestClient
 
 from app.agent_surface import DEFAULT_PAY_TO
+from app.config import Settings
 from app.main import app
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,6 +35,15 @@ PUBLIC_SURFACES = (
     ROOT / "deployment" / "seller.env.example",
     ROOT / "docs" / "wallet-split-and-bazaar.md",
 )
+
+
+def test_pay_to_strips_render_dashboard_whitespace() -> None:
+    dirty = CANONICAL_PAY_TO + " \n"
+    parsed = Settings.model_validate({"x402_pay_to_address": dirty})
+    assert parsed.x402_pay_to_address == CANONICAL_PAY_TO
+    assert len(parsed.x402_pay_to_address) == 42
+    blank = Settings.model_validate({"x402_pay_to_address": " \n"})
+    assert blank.x402_pay_to_address is None
 
 
 def test_default_pay_to_is_the_canonical_cashier() -> None:
