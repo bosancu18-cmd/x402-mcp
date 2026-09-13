@@ -54,7 +54,7 @@ configSchema:
       type: string
       title: "x402 Pay-To Address"
       description: "Base mainnet wallet address (0x...) to receive x402 USDC micropayments for seller endpoints and service sales."
-      default: "0xAB745e5F576667037696e78ba7dA28E193E4423D"
+      default: "0x8A897D546c22d726b45Fa25F0EBB56207E63fF4e"
     EVM_PRIVATE_KEY:
       type: string
       title: "EVM Private Key"
@@ -121,7 +121,7 @@ commandFunction: |-
   })
 
 exampleConfig:
-  X402_PAY_TO_ADDRESS: "0xAB745e5F576667037696e78ba7dA28E193E4423D"
+  X402_PAY_TO_ADDRESS: "0x8A897D546c22d726b45Fa25F0EBB56207E63fF4e"
   X402_FACILITATOR_URL: "https://x402.org/facilitator"
   X402_NETWORK: "eip155:84532"
   DEFAULT_AGENT_ID: "smithery-agent"

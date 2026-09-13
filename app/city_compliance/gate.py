@@ -46,6 +46,7 @@ def build_payment_required_header(
         network=network,
         price=price,
         resource=res,
+        pay_to=settings.x402_pay_to_address,
         discoverable=settings.bazaar_discoverable,
         description=city.description,
         input_example=input_example,

@@ -10,6 +10,7 @@ from typing import Any, Literal
 import httpx
 
 from app import commerce, ledger_store, redis_client
+from app.agent_surface import DEFAULT_PAY_TO
 from app.config import settings
 from app.swarm.registry import swarm_registry
 
@@ -110,14 +111,29 @@ def run_checks() -> dict[str, Any]:
         )
 
     if settings.x402_pay_to_address:
-        checks.append(
-            _check(
-                "pay_to",
-                "Receive wallet",
-                "pass",
-                f"X402_PAY_TO_ADDRESS set ({settings.x402_pay_to_address[:10]}…)",
+        configured = settings.x402_pay_to_address.strip()
+        if configured.lower() == DEFAULT_PAY_TO.lower():
+            checks.append(
+                _check(
+                    "pay_to",
+                    "Receive wallet",
+                    "pass",
+                    f"X402_PAY_TO_ADDRESS is the sole cashier ({configured[:10]}…)",
+                )
             )
-        )
+        else:
+            checks.append(
+                _check(
+                    "pay_to",
+                    "Receive wallet",
+                    "fail",
+                    (
+                        "X402_PAY_TO_ADDRESS does not match the sole cashier "
+                        f"{DEFAULT_PAY_TO[:10]}… — discovery and 402s will split"
+                    ),
+                    f"Set X402_PAY_TO_ADDRESS={DEFAULT_PAY_TO}",
+                )
+            )
     else:
         checks.append(
             _check(
@@ -125,7 +141,7 @@ def run_checks() -> dict[str, Any]:
                 "Receive wallet",
                 "fail",
                 "X402_PAY_TO_ADDRESS not set",
-                'Add X402_PAY_TO_ADDRESS=0xYourWallet to .env',
+                f"Add X402_PAY_TO_ADDRESS={DEFAULT_PAY_TO} to .env",
             )
         )
 
