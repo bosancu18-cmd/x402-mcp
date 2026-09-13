@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     key_provider: str = "env"
 
     # Seller (cold receive) — on-chain payTo for revenue. Prefer separate from buyer.
+    # Live cashier is 0x8A897D546c22d726b45Fa25F0EBB56207E63fF4e (DEFAULT_PAY_TO).
     x402_pay_to_address: str | None = None
     # Base Network Pulse synthesis inputs (real data sources).
     base_rpc_url: str = "https://mainnet.base.org"

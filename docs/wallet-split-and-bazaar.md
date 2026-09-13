@@ -43,7 +43,7 @@ Listing is **not** a separate “register” API. CDP indexes your endpoint when
 Check merchant listing:
 
 ```bash
-curl "https://api.cdp.coinbase.com/platform/v2/x402/discovery/merchant?payTo=YOUR_COLD_ADDRESS"
+curl "https://api.cdp.coinbase.com/platform/v2/x402/discovery/merchant?payTo=0x8A897D546c22d726b45Fa25F0EBB56207E63fF4e"
 curl "https://api.cdp.coinbase.com/platform/v2/x402/discovery/search?query=x402-seller-demo&network=eip155:84532"
 ```
 

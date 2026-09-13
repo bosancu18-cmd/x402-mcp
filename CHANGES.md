@@ -4,6 +4,11 @@ This file documents deltas **only** within this repository (`x402-mcp/`).
 If this clone sits inside a larger parent workspace, use this manifest for goal
 verification instead of a repo-wide `git status` of the parent tree.
 
+## Sole cashier `0x8A897D54…` (2026-09-13)
+
+- `smithery.yaml` default + exampleConfig and `render.yaml` `X402_PAY_TO_ADDRESS` now pin `0x8A897D546c22d726b45Fa25F0EBB56207E63fF4e` (replaces the retired Smithery default and the unpinned Render dashboard slot)
+- `tests/test_payto_single_cashier.py` rejects retired receive prefixes and asserts Smithery + Render match `DEFAULT_PAY_TO`
+
 ## Doc + dashboard accuracy sync (2026-09-13)
 
 - Pulse list price docs aligned to live `$0.05` and pinned purchase URL `d22bbf5f3c4b4666a6f80980c7bc7c50` (`README.md`, `MEMORY.md`, `docs/USER-GUIDE.md`, `docs/SELLER-STOREFRONT.md`, `docs/DEPLOY-PLAN.md`, `deployment/seller.env.example`)
