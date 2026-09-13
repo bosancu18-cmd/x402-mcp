@@ -283,15 +283,6 @@ label {
     font-size: 12px !important;
   }
 
-  /* Compact mode badge label on small screens */
-  .mc-mode-badge .mc-mode-full {
-    display: none;
-  }
-
-  .mc-mode-badge .mc-mode-short {
-    display: inline !important;
-  }
-
   .mc-mission {
     margin: 10px 10px 0 !important;
     padding: 12px 14px !important;
@@ -341,10 +332,6 @@ label {
 
 /* Desktop-only helper (hidden on mobile via hide-mobile; shown by default) */
 .show-mobile {
-  display: none;
-}
-
-.mc-mode-badge .mc-mode-short {
   display: none;
 }
 

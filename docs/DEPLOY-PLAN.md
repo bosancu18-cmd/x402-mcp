@@ -9,7 +9,7 @@ Status of prerequisites (2026-07-16):
 | Prerequisite | State |
 | --- | --- |
 | Revenue pipeline fixes committed | done (`1c1ef68`) |
-| Pulse repriced to $0.25 | done (`7e42328`) |
+| Pulse repriced to $0.05 (current; was $0.25 mid-2026) | done (`7e42328`, then `app/config.py` → `$0.05`) |
 | Bazaar discovery extension on 402s | done (`ec06920`) |
 | RedisQuotaStore (real persistence) | done (`065b5f8`) |
 | Revenue-network coherence guard | done (this commit) |
@@ -25,7 +25,7 @@ Status of prerequisites (2026-07-16):
    `revenue_network: eip155:8453` (the new coherence check FAILS the deploy if
    a public box would sell quota for testnet USDC).
 3. **Do not settle the indexing payment before the listing is live and priced
-   at $0.25** — the catalog's first quality snapshot bakes in what it sees.
+   at the current `PULSE_PRICE` ($0.05)** — the catalog's first quality snapshot bakes in what it sees.
 
 ## Provider recommendation
 
@@ -81,7 +81,7 @@ SWARM_ENABLED=false                   # no buyer role on a public box
    long-lived machine, republish after any deploy; PRIORITY follow-up is the
    `ledger/products.jsonl` durable-listings deliverable.
 7. **The one discoverable settle** (operator machine, holds the spend key):
-   `pay_and_fetch` against the public purchase URL — $0.25, Base mainnet,
+   `pay_and_fetch` against the public purchase URL — $0.05, Base mainnet,
    settles via CDP with the discovery extension in the payload. This is a
    self-purchase whose purpose is the catalog trigger: record it in the
    ledger as usual, never present it as external revenue.
@@ -92,7 +92,7 @@ SWARM_ENABLED=false                   # no buyer role on a public box
 
 ## Cost ceiling
 
-Fly ~$3/mo + Upstash $0 + the $0.25 indexing settle. Warden's monthly cap
+Fly ~$3/mo + Upstash $0 + the $0.05 indexing settle. Warden's monthly cap
 ($3.00) is untouched by hosting; the settle is within the operator-approved
 sequence but EXCEEDS the $0.05/call warden cap if routed through the swarm —
 route it as a direct operator `pay_and_fetch`, never by weakening the cap.

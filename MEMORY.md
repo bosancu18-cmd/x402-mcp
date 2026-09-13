@@ -2,7 +2,7 @@
 
 **Project:** x402 Micropayments MCP Server  
 **Status:** ✅ **LIVE on Base mainnet** (◕‿◕) ✨  
-**Last Updated:** Monday, August 24, 2026  
+**Last Updated:** Sunday, September 13, 2026  
 **GitHub:** https://github.com/kwizzlesurp10-ctrl/x402-mcp  
 
 ---
@@ -47,8 +47,9 @@ Live paid catalog — same price strings the machine catalog emits:
 | Gainesville Code Cases | `GET /us/gain/property-check` | `$0.01` |
 | KC Exterior Building Violations | `GET /us/kc/property-check` | `$0.01` |
 | Base transaction finality check | `GET /base/finality-check` | `$0.01` |
+| Base Network Pulse (pinned) | `GET /swarm/products/d22bbf5f3c4b4666a6f80980c7bc7c50/purchase` | `$0.05` |
 
-Free samples: `GET /pulse` (Base Network Pulse preview), `GET /us/cities`, `GET /{mn,us/{code}}/property-check/sample`. Do not treat Pulse as a $0.25 unpaid-roadmap SKU — the paid doors are the rows above.
+Free samples: `GET /pulse` (Base Network Pulse preview), `GET /us/cities`, `GET /{mn,us/{code}}/property-check/sample`. Paid Pulse is `$0.05` on the pinned listing above — not a separate unpaid-roadmap SKU.
 
 ### 🛡️ Security Boundaries
 - ✅ Seller wallet holds **no spend key** — verification only
@@ -64,7 +65,7 @@ Free samples: `GET /pulse` (Base Network Pulse preview), `GET /us/cities`, `GET 
 - [x] x402 v2 wire format implementation (challenge generation → payment → verification → settlement)
 - [x] Coinbase CDP facilitator integration on Base mainnet
 - [x] Stripe fiat alternative payment rail (checkout + webhook handling)
-- [x] 19 MCP tools across buyer/seller/commerce/swarm flows
+- [x] 22 MCP tools across buyer/seller/commerce/swarm/city/mailrail flows
 - [x] Quota system: 500 calls/month free tier, 10/min rate limit
 - [x] FastMCP + FastAPI with both stdio and HTTP/SSE transports
 - [x] Redis-ready state persistence (in-memory fallback)
@@ -124,7 +125,7 @@ x402-mcp/
 ### Key Design Patterns
 
 **1. Single Source of Truth Pattern**
-- `app/tools_registry.py` is the canonical inventory for all 19 MCP tools
+- `app/tools_registry.py` is the canonical inventory for all 22 MCP tools (`TOOL_COUNT`)
 - README, `/.well-known/mcp`, and test manifests are derived from this
 - Guarded by automated tests (`test_manifest.py`, `test_readme.py`)
 

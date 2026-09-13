@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildBazaarCatalog,
   buildCityCalls,
   buildStorefrontCalls,
   demandForCity,
   indexDemand,
   parsePriceUsdc,
   pathFromUrl,
+  PINNED_PULSE_PRODUCT_ID,
 } from "./storefront";
 import type { CityCatalogItem, DemandReport } from "../api/client";
 
@@ -132,6 +134,34 @@ describe("buildCityCalls", () => {
   });
 });
 
+describe("buildBazaarCatalog", () => {
+  it("includes free catalog entries and pinned pulse purchase path", () => {
+    const entries = buildBazaarCatalog({
+      cities,
+      demand,
+      products: [
+        {
+          product_id: PINNED_PULSE_PRODUCT_ID,
+          topic: "Base Network Pulse @ block 50032697",
+          cost_basis_usdc: 0,
+          price_usdc: 0.05,
+          margin_usdc: 0.05,
+          markup: 0,
+          network: "eip155:8453",
+          status: "listed",
+          sources: [],
+          revenue_usdc: 0.4,
+        },
+      ],
+    });
+    expect(entries[0].path).toBe("/us/cities");
+    expect(entries.some((e) => e.path === `/swarm/products/${PINNED_PULSE_PRODUCT_ID}/purchase`)).toBe(
+      true,
+    );
+    expect(entries.some((e) => e.name.includes("Llama"))).toBe(false);
+  });
+});
+
 describe("buildStorefrontCalls", () => {
   it("lists cities ahead of swarm composites", () => {
     const calls = buildStorefrontCalls({
@@ -139,7 +169,7 @@ describe("buildStorefrontCalls", () => {
       demand,
       products: [
         {
-          product_id: "d22bbf5f3c4b4666a6f80980c7bc7c50",
+          product_id: PINNED_PULSE_PRODUCT_ID,
           topic: "Base Network Pulse @ block 50032697",
           cost_basis_usdc: 0,
           price_usdc: 0.05,

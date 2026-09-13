@@ -1,19 +1,3 @@
-
-
-const MEMBERS = [
-  { name: "Coinbase", role: "Premier Founder", badge: "Base Facilitator" },
-  { name: "Cloudflare", role: "Infrastructure", badge: "Edge Gateways" },
-  { name: "AWS", role: "Cloud Partner", badge: "Resource Host" },
-  { name: "Circle", role: "USDC Issuer", badge: "Settlement Asset" },
-  { name: "Visa", role: "Payment Network", badge: "Facilitator Rail" },
-  { name: "Mastercard", role: "Payment Network", badge: "Facilitator Rail" },
-  { name: "Stripe", role: "Merchant Engine", badge: "Checkout Bridge" },
-  { name: "Google", role: "Cloud & AI", badge: "Resource Provider" },
-  { name: "Adyen", role: "Global Payments", badge: "Enterprise Rail" },
-  { name: "AMEX", role: "Financial Services", badge: "Enterprise Partner" },
-  { name: "Solana Foundation", role: "Chain Partner", badge: "Solana Micropayments" },
-];
-
 export function FoundationTicker() {
   return (
     <div
@@ -26,7 +10,6 @@ export function FoundationTicker() {
         marginBottom: "16px",
         display: "flex",
         alignItems: "center",
-        justifyContent: "space-between",
         gap: "16px",
         overflow: "hidden",
       }}
@@ -51,50 +34,20 @@ export function FoundationTicker() {
             fontWeight: 600,
           }}
         >
-          Linux Foundation x402 Ecosystem (Reference)
+          x402 protocol
         </span>
       </div>
-
-      <div
+      <p
         style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "20px",
-          overflowX: "auto",
-          scrollbarWidth: "none",
-          msOverflowStyle: "none",
+          margin: 0,
+          fontSize: "12px",
+          color: "#9CA3AF",
+          lineHeight: 1.45,
         }}
       >
-        {MEMBERS.map((m) => (
-          <div
-            key={m.name}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              flexShrink: 0,
-              padding: "4px 10px",
-              borderRadius: "6px",
-              background: "rgba(255, 255, 255, 0.03)",
-              border: "1px solid rgba(255, 255, 255, 0.06)",
-            }}
-          >
-            <span style={{ fontSize: "13px", fontWeight: 600, color: "#E5E7EB" }}>{m.name}</span>
-            <span
-              style={{
-                fontSize: "10px",
-                fontFamily: "var(--font-mono, monospace)",
-                padding: "2px 6px",
-                borderRadius: "4px",
-                background: "rgba(59, 130, 246, 0.15)",
-                color: "#60A5FA",
-              }}
-            >
-              {m.badge}
-            </span>
-          </div>
-        ))}
-      </div>
+        Linux Foundation at the protocol layer. This node is independent and is not certified
+        by the Linux Foundation or any payment network.
+      </p>
     </div>
   );
 }

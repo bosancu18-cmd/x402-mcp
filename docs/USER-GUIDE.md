@@ -56,7 +56,7 @@ The same server sells. `build_seller_requirements` mints the `402` challenge for
 | Paid example | https://x402-mcp.onrender.com/us/sea/property-check |
 | Free sample | https://x402-mcp.onrender.com/us/sea/property-check/sample |
 
-Also live: `GET /mn/property-check?address=...` at $0.01 (Minneapolis legacy path) and `GET /swarm/products/{id}/purchase` at $0.25 (Base Network Pulse). All sales settle to `X402_PAY_TO_ADDRESS`; the seller host never holds a spend key. See [CITY-NETWORK.md](CITY-NETWORK.md).
+Also live: `GET /mn/property-check?address=...` at $0.01 (Minneapolis legacy path) and `GET /swarm/products/d22bbf5f3c4b4666a6f80980c7bc7c50/purchase` at $0.05 (pinned Base Network Pulse listing). All sales settle to `X402_PAY_TO_ADDRESS`; the seller host never holds a spend key. See [CITY-NETWORK.md](CITY-NETWORK.md).
 Above both sides sits a commerce overlay (`app/commerce.py`): free tier at 500 calls/month and 10/min, a pro tier and per-use credits purchasable over x402 or Stripe, and a `meta` envelope on every tool response reporting quota. `app/swarm/` closes the loop — it buys cheap upstream services, composes a priced composite, and lists it for resale.
 
 ### Who this is for
@@ -386,7 +386,7 @@ Prices are plain dollar strings (`"$0.01"`), configured per product in `app/conf
 | `X402_DEFAULT_PRICE` | `$0.01` | fallback price |
 | `CITY_NETWORK_PRICE` | `$0.01` | `/us/{code}/property-check` (catalog: `/us/cities`) |
 | `MN_PROPERTY_CHECK_PRICE` | `$0.01` | `/mn/property-check` |
-| `PULSE_PRICE` | `$0.25` | `/swarm/products/{id}/purchase` |
+| `PULSE_PRICE` | `$0.05` | `/swarm/products/d22bbf5f3c4b4666a6f80980c7bc7c50/purchase` (pinned via `PINNED_PULSE_PRODUCT_ID`) |
 | `PRO_TIER_PRICE` | `$29.00` | MCP pro tier |
 | `TOOL_CREDIT_PACK_PRICE` | `$1.00` | 100 tool credits |
 Network choice matters as much as the number. `SWARM_SELL_NETWORK` decides where composites list. For the commerce paths, `resolve_revenue_network()` picks `REVENUE_NETWORK` if set, else the first entry in `CDP_NETWORKS` when CDP creds exist, else `X402_DEFAULT_NETWORK` — deliberately, so a mainnet-credentialed deploy can't hand out real quota for free Sepolia USDC just because the default network is Sepolia.
@@ -432,7 +432,7 @@ Once the catalog has indexed `.../swarm/products/{id}/purchase`, that URL must k
 Two defenses, both in the repo:
 
 - Set `REDIS_URL` (Upstash) so the swarm registry, quota, and ledgers survive restarts. Without it the file store is used, and an ephemeral filesystem loses everything.
-- Set `PINNED_PULSE_PRODUCT_ID` to a fixed hex id. `app/swarm/publisher.py::restore_pinned_listing` runs at startup and republishes onto that same id, so the indexed URL keeps resolving. `PINNED_PULSE_MAX_AGE_SECONDS` (default 900) forces a refresh of a restored report rather than selling a frozen snapshot as "live"; accumulated `revenue_usdc` is carried across the rebuild. If the republish fails, boot continues — a broken listing must never take down `/health`.
+- Set `PINNED_PULSE_PRODUCT_ID` to a fixed hex id (production: `d22bbf5f3c4b4666a6f80980c7bc7c50`). `app/swarm/publisher.py::restore_pinned_listing` runs at startup and republishes onto that same id, so the indexed URL keeps resolving. `PINNED_PULSE_MAX_AGE_SECONDS` (default 900) forces a refresh of a restored report rather than selling a frozen snapshot as "live"; accumulated `revenue_usdc` is carried across the rebuild. If the republish fails, boot continues — a broken listing must never take down `/health`.
 
 Related honesty detail worth imitating: the published Pulse description deliberately omits the block height, because catalogs index a description once and never revisit it, while the listing itself is rebuilt with fresh data. Volatile facts belong in the delivered report, not in the cataloged description.
 
@@ -524,7 +524,7 @@ Every tool also accepts an optional `agent_id` argument. Pass a stable one — i
 | `activate_pro_tier` | Verify an x402 payment and unlock Pro tier quota | free | — |
 | `get_tool_credits_requirements` | Build x402 payment requirements for per-use tool credits | free | `X402_PAY_TO_ADDRESS` |
 | `purchase_tool_credits` | Verify an x402 payment and add per-use tool credits | free | — |
-| `create_stripe_checkout` | Create a Stripe Checkout Session for Pro tier or tool credits (fiat rail) | free | `STRIPE_SECRET_KEY` |
+| *(HTTP only)* `POST /stripe/checkout` | Create a Stripe Checkout Session for Pro tier or tool credits (fiat rail — not an MCP tool) | free | `STRIPE_SECRET_KEY` |
 | `run_swarm_research` | Run the swarm Agency: buy cheap upstream x402 services, compose a composite report, list it for resale | free | `EVM_PRIVATE_KEY`, `X402_PAY_TO_ADDRESS` |
 | `settle_composite_sale` | Verify + settle a buyer's payment for a listed composite and record the revenue | free | — |
 | `swarm_revenue_report` | Swarm composite economics: spend, composite sales, LTV:CAC; `storefront` is the full settled ledger | free | — |
@@ -639,7 +639,7 @@ curl -s https://<your-app>/health
 The buyer side lives on your operator machine, which is also where the discovery settle runs from:
 
 ```bash
-.venv/Scripts/python scripts/settle_once.py --url https://<your-app>/swarm/products/<product_id>/purchase --max-usdc 0.25
+.venv/Scripts/python scripts/settle_once.py --url https://<your-app>/swarm/products/d22bbf5f3c4b4666a6f80980c7bc7c50/purchase --max-usdc 0.05
 ```
 
 That's the CDP Bazaar quirk in action: a paid endpoint is indexed when it is **settled**, not when it is published, so it stays invisible until someone pays it once. `--max-usdc` is a hard cap, and nothing is written to the ledger unless the payment actually settled on chain — so the transient CDP 502s are safe to just retry.
@@ -756,7 +756,7 @@ Backing store is chosen once at import (`app/ledger_store.py`): `REDIS_URL` set 
 | Facilitator returns **502** mid-settle; `payment_settled` is false | The CDP facilitator throws transient 502s often enough to matter. This path is safe: no funds move and nothing is written to the ledger (`scripts/settle_once.py` returns 1 and prints `no funds moved, nothing recorded`). | Just run it again. Do not "reconcile" anything — there is nothing to reconcile. |
 | `/doctor` FAILs `redis` / `ledger` / `registry` with *"REDIS_URL set but running IN-MEMORY / fell back to FILES"* | `app/redis_client.py` tried once at import, the PING failed, and every store silently fell back. The message includes the recorded `fallback_reason` (e.g. `ConnectionError: ...`). Serving continues on purpose — a storefront that still answers 402s beats one that is down — but the next restart eats your entitlements, ledgers and listings. | Fix the URL/credentials or Redis availability, then **restart the process**. The client is built at import; nothing re-tries on its own. |
 | After a restart on an ephemeral host: `/swarm/products` is empty and the cataloged purchase URL answers **404** | Render's free plan restarts and comes back with an empty filesystem, so file-backed listings vanish while the money is still on-chain. This already cost real records once. | Set `REDIS_URL`. As a belt-and-braces measure, set `PINNED_PULSE_PRODUCT_ID` — `restore_pinned_listing()` in `app/swarm/publisher.py` runs at startup and republishes a fresh Pulse onto the *same* product id (carrying its accumulated `revenue_usdc` across), so the URL already sitting in the catalog stays resolvable. It also refreshes a listing whose report has aged past `PINNED_PULSE_MAX_AGE_SECONDS`. |
-| A paid endpoint is live and correct but never shows up in the CDP Bazaar catalog | The catalog indexes a resource when it is **settled**, not when it is published. Until someone pays it once, it is invisible — a pure chicken-and-egg. | Settle it yourself once. `scripts/settle_once.py` exists for exactly this and pays through the sole spender with a hard cap: `.venv/Scripts/python scripts/settle_once.py --url https://<your-host>/swarm/products/<id>/purchase --max-usdc 0.25`. Run it from a machine that holds the spend key, never from the seller box. Record it as a self-purchase; never present it as external revenue. Expect ~6h for the catalog to refresh. |
+| A paid endpoint is live and correct but never shows up in the CDP Bazaar catalog | The catalog indexes a resource when it is **settled**, not when it is published. Until someone pays it once, it is invisible — a pure chicken-and-egg. | Settle it yourself once. `scripts/settle_once.py` exists for exactly this and pays through the sole spender with a hard cap: `.venv/Scripts/python scripts/settle_once.py --url https://<your-host>/swarm/products/d22bbf5f3c4b4666a6f80980c7bc7c50/purchase --max-usdc 0.05`. Run it from a machine that holds the spend key, never from the seller box. Record it as a self-purchase; never present it as external revenue. Expect ~6h for the catalog to refresh. |
 | `GET /mn/property-check` returns **422**, not 402 | `address` is a *required* query parameter. FastAPI rejects the request before any payment logic runs. The handler also returns 422 `invalid_address` for an empty or >120-char address. | Send the parameter: `curl -i "https://x402-mcp.onrender.com/mn/property-check?address=<street+address>"`. A well-formed request with no `PAYMENT-SIGNATURE` header gives **402** plus a `PAYMENT-REQUIRED` header — that's the healthy answer. |
 | **402** with `"error": "payment_invalid"` instead of 200 | Verify or settle came back bad. `invalid_reason` and `settlement_error` are in the body. | Read those two fields. A transient facilitator error here is the same 502 story — retry. |
 | `/swarm/products/{id}/purchase` returns **404** or **409** | 404 = unknown `product_id` (usually the lost-listing case above). 409 = the product exists but has no `payment_required_header`, i.e. it was never actually listed for sale. | Republish the listing. |

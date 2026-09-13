@@ -128,8 +128,9 @@ export function ParallaxProtocolHero({ telemetry }: { telemetry: TelemetryRespon
               Accountless Micropayments for the Agent Economy
             </h1>
             <p style={{ margin: "8px 0 0 0", color: "#9CA3AF", fontSize: "14px", maxWidth: "680px" }}>
-              HTTP status code 402 native payment standard governed by the Linux Foundation. Instant,
-              settled stablecoin micropayments for AI agents and HTTP resources with zero account friction.
+              HTTP 402 native payment standard. Linux Foundation at the protocol layer; this node is
+              independent and is not certified by the Linux Foundation. Instant, settled stablecoin
+              micropayments for AI agents and HTTP resources with zero account friction.
             </p>
           </div>
 

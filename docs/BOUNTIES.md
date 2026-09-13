@@ -28,7 +28,7 @@ Filed as GitHub issues with title prefix `bounty:`.
 
 | $ USDC | Deliverable (new file) | Acceptance |
 |---:|---|---|
-| 5 | `docs/TOOL_LEGIBILITY.md` | 16 tools scored on outcome / when-to-use / cost / example / failure |
+| 5 | `docs/TOOL_LEGIBILITY.md` | 22 tools scored on outcome / when-to-use / cost / example / failure |
 | 15 | `docs/BAZAAR_AUDIT.md` | every discoverable resource has input shape + example output + price < $0.10 note |
 | 25 | `docs/LIVE_LEDGER.md` | trailing paid calls, unique paying wallets, settlement fails, p99 if known |
 | 0.01 | verification call | unpaid 402 vs paid 200 on a live city endpoint; sale-watch issue appears |

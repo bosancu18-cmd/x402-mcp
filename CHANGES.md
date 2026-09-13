@@ -4,6 +4,12 @@ This file documents deltas **only** within this repository (`x402-mcp/`).
 If this clone sits inside a larger parent workspace, use this manifest for goal
 verification instead of a repo-wide `git status` of the parent tree.
 
+## Doc + dashboard accuracy sync (2026-09-13)
+
+- Pulse list price docs aligned to live `$0.05` and pinned purchase URL `d22bbf5f3c4b4666a6f80980c7bc7c50` (`README.md`, `MEMORY.md`, `docs/USER-GUIDE.md`, `docs/SELLER-STOREFRONT.md`, `docs/DEPLOY-PLAN.md`, `deployment/seller.env.example`)
+- MCP tool count docs aligned to `TOOL_COUNT` = 22; removed stale `commerce.stripe_checkout` MCP claims (Stripe remains HTTP-only: `POST /stripe/checkout`)
+- `dashboard/src/components/BazaarResourceExplorer.tsx` — live API-driven catalog; removed fabricated third-party listings and dead Pulse product id
+
 ## Application (`app/`)
 
 | File | Purpose |

@@ -43,6 +43,18 @@ def test_dashboard_trailing_slash() -> None:
     assert client.get("/dashboard/").status_code == 200
 
 
+def test_mission_control_bundle_has_no_costume_claims() -> None:
+    """SPA must not pretend this node is private, certified, or run by card networks."""
+    assets = list((MC_DIST / "assets").glob("index-*.js"))
+    assert assets, "SPA JS bundle missing under app/static/mission_control/assets"
+    js = b"".join(p.read_bytes() for p in assets)
+    assert b"Private Operator Terminal" not in js
+    assert b"Public Ecosystem Showcase" not in js
+    assert b"Facilitator Rail" not in js
+    assert b"not certified" in js
+    assert b"protocol layer" in js
+
+
 def test_dashboard_assets_are_served() -> None:
     html = client.get("/dashboard").text
     # Pull hashed asset paths from the index the server actually returned.

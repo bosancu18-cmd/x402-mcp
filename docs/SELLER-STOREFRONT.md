@@ -50,7 +50,8 @@ cp deployment/seller.env.example seller.env
 | `SWARM_SELL_NETWORK=eip155:8453` | List the Pulse product on Base mainnet |
 | `DASHBOARD_ACTIONS=true` | Allow `POST /pulse/publish` (read-only if false) |
 | `PUBLIC_BASE_URL` | Public origin; used to build the purchase URL |
-| `PULSE_PRICE=$8.00` | List price per synthesized Pulse report |
+| `PULSE_PRICE=$0.05` | List price per synthesized Pulse report |
+| `PINNED_PULSE_PRODUCT_ID=d22bbf5f3c4b4666a6f80980c7bc7c50` | Stable Bazaar-indexed purchase URL across restarts |
 
 **Do not** add `EVM_PRIVATE_KEY`.
 
@@ -133,6 +134,6 @@ Either way, point `PUBLIC_BASE_URL` at the public origin so the purchase URL in
 
 ## Pricing
 
-Set by `PULSE_PRICE` (default `$8.00`). It becomes the listed `price_usdc` and
+Set by `PULSE_PRICE` (default `$0.05` in `app/config.py`). It becomes the listed `price_usdc` and
 the amount encoded in the 402 `PAYMENT-REQUIRED` challenge. Change it and
 restart; each new `POST /pulse/publish` mints a listing at the current price.

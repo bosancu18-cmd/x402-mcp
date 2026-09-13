@@ -475,50 +475,6 @@ export default function App() {
         }}
       >
         <div className="mc-header-actions" style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-          <div
-            className="mc-mode-badge"
-            role="button"
-            tabIndex={0}
-            onClick={() => setDemo((d) => !d)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setDemo((d) => !d);
-              }
-            }}
-            title={
-              demo
-                ? "Currently in Public Ecosystem Showcase Mode. Click to switch to Private Operator Terminal."
-                : "Currently in Private Operator Terminal Mode. Click to switch to Public Ecosystem Showcase."
-            }
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              padding: "4px 12px",
-              borderRadius: 20,
-              background: demo ? "rgba(245, 158, 11, 0.15)" : "rgba(0, 240, 255, 0.15)",
-              border: demo ? "1px solid rgba(245, 158, 11, 0.4)" : "1px solid rgba(0, 240, 255, 0.4)",
-              cursor: "pointer",
-              fontSize: 11,
-              fontFamily: "var(--font-mono, monospace)",
-              fontWeight: 600,
-              color: demo ? "#F59E0B" : "#00F0FF",
-            }}
-          >
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: "50%",
-                background: demo ? "#F59E0B" : "#00F0FF",
-                boxShadow: demo ? "0 0 8px #F59E0B" : "0 0 8px #00F0FF",
-              }}
-            />
-            <span className="mc-mode-full">{demo ? "🌐 Public Ecosystem Showcase" : "🛡️ Private Operator Terminal"}</span>
-            <span className="mc-mode-short">{demo ? "🌐 Showcase" : "🛡️ Operator"}</span>
-          </div>
-
           <label style={{ fontSize: 13, color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
             <input
               type="checkbox"
@@ -620,7 +576,13 @@ export default function App() {
 
         <div className="hide-mobile" style={{ display: "contents" }}>
           <ChainDistributionBar density={density} />
-          <BazaarResourceExplorer density={density} />
+          <BazaarResourceExplorer
+            density={density}
+            demo={demo}
+            products={products}
+            revenueRows={revenue}
+            payTo={stats?.config.pay_to_address}
+          />
           <FacilitatorLeaderboard density={density} telemetry={telemetry} />
         </div>
 

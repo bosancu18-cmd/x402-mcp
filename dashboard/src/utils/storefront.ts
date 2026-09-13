@@ -1,7 +1,22 @@
 import { parseUsdcToAtomic } from "./usdc";
 import type { CityCatalogItem, DemandReport, DemandResource, SwarmProduct, LedgerRow } from "../api/client";
 
+/** Bazaar-indexed Pulse listing — must match render.yaml PINNED_PULSE_PRODUCT_ID. */
+export const PINNED_PULSE_PRODUCT_ID = "d22bbf5f3c4b4666a6f80980c7bc7c50";
+
+export const DEFAULT_PAY_TO = "0x8A897D546c22d726b45Fa25F0EBB56207E63fF4e";
+
 export type StorefrontCategory = "Canonical Data" | "US Compliance Network" | "Swarm Composite";
+
+export type BazaarEntry = {
+  id: string;
+  name: string;
+  category: string;
+  priceUsdc: number;
+  network: string;
+  path: string;
+  description: string;
+};
 
 export type ActiveCall = {
   id: string;
@@ -145,4 +160,48 @@ export function buildStorefrontCalls(opts: {
     ...buildCityCalls(opts.cities, opts.demand),
     ...buildSwarmCalls(opts.products, opts.revenueRows, opts.demand),
   ];
+}
+
+const FREE_BAZAAR_ENTRIES: BazaarEntry[] = [
+  {
+    id: "us-city-catalog",
+    name: "US City Open-Data Compliance Catalog",
+    category: "Catalog (free)",
+    priceUsdc: 0,
+    network: "Base Mainnet (8453)",
+    path: "/us/cities",
+    description:
+      "Free machine catalog of 14-jurisdiction property compliance endpoints — canonical Visit URL for directories.",
+  },
+  {
+    id: "sea-property-check-sample",
+    name: "Seattle RRIO free sample",
+    category: "Sample (free)",
+    priceUsdc: 0,
+    network: "Base Mainnet (8453)",
+    path: "/us/sea/property-check/sample",
+    description: "Canonical free-sample Resource URL for the US city network.",
+  },
+];
+
+/** Live storefront resources only — no third-party or fabricated listings. */
+export function buildBazaarCatalog(opts: {
+  cities?: CityCatalogItem[] | null;
+  demand?: DemandReport | null;
+  products?: SwarmProduct[] | null;
+  revenueRows?: LedgerRow[] | null;
+}): BazaarEntry[] {
+  const paid = buildStorefrontCalls(opts).map((call) => ({
+    id: call.id,
+    name: call.name,
+    category: call.category,
+    priceUsdc: call.priceUsdc,
+    network: "Base Mainnet (8453)",
+    path: call.path,
+    description:
+      call.samplePath != null
+        ? `Paid x402 resource — free sample at ${call.samplePath}`
+        : `Live x402 resource — ${call.status.toLowerCase()}`,
+  }));
+  return [...FREE_BAZAAR_ENTRIES, ...paid];
 }

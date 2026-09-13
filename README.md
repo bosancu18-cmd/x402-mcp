@@ -50,18 +50,18 @@ Fiat Sponsors (GitHub Sponsors / Polar / thanks.dev) do **not** credit `payTo` o
 |---------|-------|--------------|
 | `GET /mn/property-check?address=…` | $0.01 USDC | Minneapolis rental-compliance snapshot composed from 3 live City of Minneapolis open datasets — the first machine-payable housing-compliance data for agents |
 | `GET /us/{code}/property-check?address=…` | $0.01 USDC | **US City Open-Data Compliance Network** (14 jurisdictions) — same wire protocol; free catalog `/us/cities` + free `/sample`; MCP: `city.list` → `city.sample` → `city.check` |
-| `GET /swarm/products/{id}/purchase` | $0.25 USDC | Base Network Pulse: live settlement-conditions intelligence (EIP-1559 math + real RPC + ETH spot), listed with the x402 Bazaar discovery extension |
+| `GET /swarm/products/d22bbf5f3c4b4666a6f80980c7bc7c50/purchase` | $0.05 USDC | Base Network Pulse: live settlement-conditions intelligence (EIP-1559 math + real RPC + ETH spot), pinned listing with the x402 Bazaar discovery extension |
 
 The public seller host holds **no spend key** — it only verifies and settles inbound payments ([docs/SELLER-STOREFRONT.md](docs/SELLER-STOREFRONT.md)). Roadmap: [ROADMAP.md](ROADMAP.md).
 
 ## Features
 
-- **23 MCP tools** for buyer, seller, Stripe fiat, x402 commerce, swarm-agency, US city compliance, MailRail messaging, Agent ID cards, and ops-monitoring flows — canonical inventory in `app/tools_registry.py` (single source for README, `/.well-known/mcp`, and tests); guarded by `tests/test_readme.py` and `tests/test_manifest.py`
+- **23 MCP tools** for buyer, seller, x402 commerce, swarm-agency, US city compliance, MailRail messaging, Agent ID cards, and ops-monitoring flows — canonical inventory in `app/tools_registry.py` (single source for README, `/.well-known/mcp`, and tests); guarded by `tests/test_readme.py` and `tests/test_manifest.py`
 - **4 MCP prompts** (`onboarding_flow`, `x402_tool_selector`, `generate_quote`, `troubleshoot_payment`) for LLM orchestrators
 - **4 MCP resources** (`x402://agent-card`, `x402://server-card`, `x402://tools-manifest`, `x402://pricing-table`) exposing live machine descriptors
 - **A2A Protocol v1.0 Agent ID Cards** — HTTP Agent Card + MCP `get_agent_card` (`x402.agent_card`) / `x402://agent-card` with per-`agent_id` quota isolation
 - **x402/Coinbase rail** (primary): x402 v2 wire format end to end — challenge generation, verify + settle via the CDP facilitator on Base mainnet, Bazaar discoverability on listings
-- **Stripe payment rail** (fiat alternative): `commerce.stripe_checkout` + `POST /stripe/checkout` + `POST /stripe/webhook` for card/bank payments
+- **Stripe payment rail** (fiat alternative, HTTP only): `POST /stripe/checkout` + `POST /stripe/webhook` for card/bank payments (not exposed as an MCP tool)
 - **Commerce overlay:** 500 calls/month, 10/min rate limit, `meta` envelope on every response
 - **FastMCP** + **FastAPI** with `/.well-known/mcp` manifest
 - **stdio** (Cursor/Grok local) and **HTTP/SSE** (remote connector) transports
@@ -148,7 +148,6 @@ Tool names use domain.action trees so clients can route `x402.*`, `commerce.*`, 
 | `commerce.activate_pro` | Verify x402 payment and unlock Pro tier quota |
 | `commerce.credits_requirements` | Build x402 payment requirements for per-use tool credits |
 | `commerce.purchase_credits` | Verify x402 payment and add per-use tool credits |
-| `commerce.stripe_checkout` | Create Stripe Checkout Session for pro tier or credits |
 | `swarm.research` | Swarm Agency: compose a research report and list it for resale |
 | `swarm.settle` | Verify + settle a buyer's payment for a listed composite and record revenue |
 | `swarm.revenue` | Swarm composite economics: spend, composite sales, LTV:CAC, margins; `storefront` is the full settled ledger |
