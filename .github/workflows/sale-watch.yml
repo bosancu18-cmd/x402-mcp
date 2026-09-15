@@ -42,7 +42,7 @@ jobs:
       - name: Scan Base for stranger payments and alert
         run: |
           python3 - <<'PY'
-          import json, os, urllib.request
+          import json, os, urllib.error, urllib.request
 
           from alerts import Alerter, event_key
 
@@ -66,12 +66,33 @@ jobs:
           # ~2s blocks; cron every 30 min. Scan the last ~2 hours (3600 blocks)
           # every run so a delayed/skipped run cannot miss a sale. The event key
           # in the alert title keeps the overlap harmless.
-          start = latest - 3600
+          start = max(0, latest - 3600)
           topic_to = "0x" + "0" * 24 + PAY_TO[2:]
-          logs = rpc("eth_getLogs", [{
-              "fromBlock": hex(start), "toBlock": hex(latest),
-              "address": USDC, "topics": [XFER, None, topic_to],
-          }])
+
+          def fetch_transfer_logs(start_block: int, end_block: int, chunk_size: int = 900):
+              logs = []
+              current = start_block
+              while current <= end_block:
+                  to_block = min(end_block, current + chunk_size - 1)
+                  try:
+                      chunk = rpc("eth_getLogs", [{
+                          "fromBlock": hex(current), "toBlock": hex(to_block),
+                          "address": USDC, "topics": [XFER, None, topic_to],
+                      }])
+                  except urllib.error.HTTPError as exc:
+                      if exc.code == 413 and chunk_size > 25:
+                          chunk_size = max(25, chunk_size // 2)
+                          print(
+                              f"eth_getLogs 413 for {current}-{to_block}; "
+                              f"retrying with chunk_size={chunk_size}"
+                          )
+                          continue
+                      raise
+                  logs.extend(chunk)
+                  current = to_block + 1
+              return logs
+
+          logs = fetch_transfer_logs(start, latest)
 
           strangers = []
           for lg in logs:
