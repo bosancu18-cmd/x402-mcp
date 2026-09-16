@@ -14,8 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_smithery_yaml_has_full_metadata() -> None:
     text = (ROOT / "smithery.yaml").read_text(encoding="utf-8")
     for needle in (
-        "name: kwizzlesurp10/x402-mcp",
-        "displayName: \"x402 Micropayments & Agent ID Cards MCP\"",
+        "name: x402-mcp",
+        "displayName: \"x402-mcp\"",
         "description:",
         "homepage: \"https://x402-mcp.onrender.com\"",
         "repository: \"https://github.com/kwizzlesurp10-ctrl/x402-mcp\"",
