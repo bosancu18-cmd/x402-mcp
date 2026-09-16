@@ -1,6 +1,6 @@
 # Smithery Configuration (https://smithery.ai)
-name: kwizzlesurp10/x402-mcp
-displayName: "x402 Micropayments & Agent ID Cards MCP"
+name: x402-mcp
+displayName: "x402-mcp"
 version: 0.1.0
 description: "Autonomous crypto commerce, property compliance, Base gas optimization, and Agent ID cards MCP server over x402 on Base mainnet."
 homepage: "https://x402-mcp.onrender.com"
