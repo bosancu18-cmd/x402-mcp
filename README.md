@@ -255,7 +255,7 @@ Cost-effective multi-agent operating group (scout, warden, treasurer, archivist,
 `x402-mcp` implements the **Agent-to-Agent (A2A) Protocol v1.0** and MCP machine identity for autonomous discovery.
 
 1. **HTTP:** `GET https://x402-mcp.onrender.com/.well-known/agent-card.json` (legacy: `/.well-known/agent.json`)
-2. **MCP tool:** `x402.agent_card` (optional `target_id` for a skill)
+2. **MCP tool:** `x402.agent_card` (optional `target_id` for a skill; implemented by server handler `get_agent_card`)
 3. **MCP resource:** `x402://agent-card`
 4. **Registry:** `/.well-known/agents.json` · **payTo:** `/.well-known/funding.json`
 
