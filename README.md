@@ -56,7 +56,7 @@ The public seller host holds **no spend key** — it only verifies and settles i
 
 ## Features
 
-- **23 MCP tools** for buyer, seller, x402 commerce, swarm-agency, US city compliance, MailRail messaging, Agent ID cards, and ops-monitoring flows — canonical inventory in `app/tools_registry.py` (single source for README, `/.well-known/mcp`, and tests); guarded by `tests/test_readme.py` and `tests/test_manifest.py`
+- **22 MCP tools** for buyer, seller, x402 commerce, swarm-agency, US city compliance, MailRail messaging, Agent ID cards, and ops-monitoring flows — canonical inventory in `app/tools_registry.py` (single source for README, `/.well-known/mcp`, and tests); guarded by `tests/test_readme.py` and `tests/test_manifest.py`
 - **4 MCP prompts** (`onboarding_flow`, `x402_tool_selector`, `generate_quote`, `troubleshoot_payment`) for LLM orchestrators
 - **4 MCP resources** (`x402://agent-card`, `x402://server-card`, `x402://tools-manifest`, `x402://pricing-table`) exposing live machine descriptors
 - **A2A Protocol v1.0 Agent ID Cards** — HTTP Agent Card + MCP `get_agent_card` (`x402.agent_card`) / `x402://agent-card` with per-`agent_id` quota isolation

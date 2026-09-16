@@ -8,6 +8,17 @@ from app.config import settings
 def build_payment_rails() -> dict:
     """Document available payment rails for manifest and /upgrade."""
     return {
+        "stripe": {
+            "primary": True,
+            "description": "Fiat checkout for Pro subscriptions and tool credits",
+            "checkout_endpoint": "/stripe/checkout",
+            "webhook_endpoint": "/stripe/webhook",
+            "requires_env": ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET"],
+            "configured": bool(
+                getattr(settings, "stripe_secret_key", None)
+                and getattr(settings, "stripe_webhook_secret", None)
+            ),
+        },
         "x402_coinbase": {
             "primary": True,
             "description": (
