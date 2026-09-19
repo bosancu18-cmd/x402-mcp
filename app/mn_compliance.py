@@ -319,12 +319,14 @@ def build_payment_required_header() -> str:
     network = settings.x402_default_network
     price = settings.mn_property_check_price
     # Fingerprint MUST include every input baked into the cached header —
-    # including per-resource Bazaar service_name/tags. Omitting them freezes
-    # a wrong catalog category into Redis (and into Bazaar on the next settle).
+    # including per-resource Bazaar service_name/tags and the payTo cashier.
+    # Omitting any of them freezes a wrong value into Redis (and into Bazaar on
+    # the next settle); omitting pay_to keeps settling to a retired address.
     fp = challenge_cache.fingerprint(
         network=network,
         price=price,
         resource=resource_url(),
+        pay_to=settings.x402_pay_to_address,
         discoverable=settings.bazaar_discoverable,
         description=RESOURCE_DESCRIPTION,
         input_example=DISCOVERY_INPUT_EXAMPLE,
