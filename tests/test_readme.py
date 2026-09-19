@@ -62,6 +62,16 @@ def test_readme_smithery_badge_present() -> None:
     )
 
 
+def test_readme_24klabs_badge_present() -> None:
+    """Verify the 24K Labs listing badge is present."""
+    text = README.read_text(encoding="utf-8")
+    assert "https://24klabs.ai/listing/us-city-open-data-compliance-network" in text
+    assert (
+        "https://24klabs.ai/badge.svg?resource=https%3A%2F%2Fx402-mcp.onrender.com%2F.well-known%2Fx402"
+        in text
+    )
+
+
 def test_readme_quickstart_smithery_cli_install() -> None:
     """Verify 1-click Smithery CLI installation commands for Claude, Cursor, and Windsurf."""
     text = README.read_text(encoding="utf-8")
@@ -76,6 +86,7 @@ def test_readme_agent_id_card_section() -> None:
     assert "Agent ID Cards & Machine Identity" in text
     assert "Agent-to-Agent (A2A) Protocol v1.0" in text
     assert "`get_agent_card`" in text
+    assert "`x402.agent_card`" in text
     assert "`x402://agent-card`" in text
     assert "`agent_id`" in text
 

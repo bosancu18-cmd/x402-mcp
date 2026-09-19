@@ -15,8 +15,10 @@ services:
     region: oregon
     envVars:
       # --- secrets: set in the Render dashboard, never synced from git ---
+      # payTo is a public receive address, not a secret. Pin it here so a
+      # dashboard edit cannot silently split discovery from the live 402.
       - key: X402_PAY_TO_ADDRESS
-        sync: false           # mainnet USDC receive wallet (consistent address)
+        value: "0x8A897D546c22d726b45Fa25F0EBB56207E63fF4e"
       - key: CDP_API_KEY_ID
         sync: false
       - key: CDP_API_KEY_SECRET

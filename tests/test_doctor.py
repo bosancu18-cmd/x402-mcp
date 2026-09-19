@@ -8,6 +8,8 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+from app.agent_surface import DEFAULT_PAY_TO
+from app.config import settings
 from app.doctor import run_checks
 from app.main import app
 
@@ -25,6 +27,22 @@ def test_doctor_http_returns_checks() -> None:
     assert "pay_to" in ids
     assert "facilitator" in ids
     assert "network" in ids
+
+
+def test_doctor_rejects_non_canonical_pay_to(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "x402_pay_to_address", "0x" + "c" * 40)
+    report = run_checks()
+    pay = next(c for c in report["checks"] if c["id"] == "pay_to")
+    assert pay["status"] == "fail"
+    assert DEFAULT_PAY_TO[:10] in pay["message"]
+    assert pay["fix"] == f"Set X402_PAY_TO_ADDRESS={DEFAULT_PAY_TO}"
+
+
+def test_doctor_accepts_canonical_pay_to(monkeypatch) -> None:
+    monkeypatch.setattr(settings, "x402_pay_to_address", DEFAULT_PAY_TO)
+    report = run_checks()
+    pay = next(c for c in report["checks"] if c["id"] == "pay_to")
+    assert pay["status"] == "pass"
 
 
 def test_doctor_config_echo() -> None:

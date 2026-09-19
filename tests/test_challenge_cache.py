@@ -124,6 +124,7 @@ def test_every_builder_input_is_covered_by_the_fingerprint() -> None:
         network="eip155:8453",
         price="$0.01",
         resource="https://host/r",
+        pay_to="0x" + "a" * 40,
         discoverable=True,
         description="d",
         input_example={"address": "a"},
@@ -136,6 +137,7 @@ def test_every_builder_input_is_covered_by_the_fingerprint() -> None:
         ("network", "eip155:84532"),
         ("price", "$0.02"),
         ("resource", "https://host/other"),
+        ("pay_to", "0x" + "b" * 40),
         ("discoverable", False),
         ("description", "different"),
         ("input_example", {"address": "b"}),
@@ -146,6 +148,96 @@ def test_every_builder_input_is_covered_by_the_fingerprint() -> None:
         assert challenge_cache.fingerprint(**{**base, field: changed}) != baseline, (
             f"changing {field} did not bust the challenge cache"
         )
+
+
+def test_a_payto_change_busts_every_product_cache(monkeypatch) -> None:
+    """`pay_to` is baked into the header, so it must be in the fingerprint.
+
+    `test_every_builder_input_is_covered_by_the_fingerprint` only exercises the
+    `fingerprint()` helper, which hashes whatever it is handed — it cannot see a
+    call site that forgets a field. `pay_to` was forgotten at all five revenue
+    call sites while `main.py`'s `/demo/paid` fingerprint had it all along.
+
+    The live consequence, observed on the deployed box 2026-09-13: the operator
+    changed `X402_PAY_TO_ADDRESS` in the Render dashboard, the fingerprint did
+    not move, and every cache-backed route kept serving a Redis-persisted 402
+    that named the *previous* cashier. Buyers paid the old address, and the
+    settles catalogued under the old merchant record, for weeks.
+
+    This asserts on the fingerprint each builder actually passes, so it fails if
+    a call site drops `pay_to` again.
+    """
+    from app import challenge_cache, x402_services
+    from app.city_compliance import registry
+    from app.config import settings
+
+    seen: list[str] = []
+
+    def _capture(name, fp, builder):  # noqa: ANN001 - test double
+        seen.append(fp)
+        return "HDR"
+
+    monkeypatch.setattr(challenge_cache, "get_or_build", _capture)
+    monkeypatch.setattr(
+        x402_services,
+        "build_seller_requirements",
+        lambda params: {"payment_required_header": "HDR"},
+    )
+
+    mn = next(m for m in registry.public_modules() if m.SPEC.code == "mn")
+    builders = {
+        "city-gate": lambda: _city_gate_header(mn),
+        "mn-property-check": _mn_header,
+        "base-tx-decision": _tx_header,
+        "us-rental-diligence-pack": _diligence_header,
+        "property-due-diligence-agent": _pdd_header,
+    }
+
+    for label, build in builders.items():
+        seen.clear()
+        monkeypatch.setattr(settings, "x402_pay_to_address", "0x" + "a" * 40)
+        build()
+        monkeypatch.setattr(settings, "x402_pay_to_address", "0x" + "b" * 40)
+        build()
+        assert len(seen) == 2, f"{label} did not route through the challenge cache"
+        assert seen[0] != seen[1], (
+            f"{label}: changing pay_to did not bust the challenge cache — a "
+            "cashier change would keep settling to the old address"
+        )
+
+
+def _city_gate_header(mod):  # noqa: ANN001, ANN202 - test helper
+    from app.city_compliance import gate
+
+    return gate.build_payment_required_header(
+        mod.SPEC,
+        input_example={"address": mod.SPEC.sample_address},
+        output_example=mod.discovery_output_example(),
+    )
+
+
+def _mn_header() -> str:
+    from app import mn_compliance
+
+    return mn_compliance.build_payment_required_header()
+
+
+def _tx_header() -> str:
+    from app import tx_decision
+
+    return tx_decision.build_payment_required_header()
+
+
+def _diligence_header() -> str:
+    from app import diligence_pack
+
+    return diligence_pack.build_payment_required_header()
+
+
+def _pdd_header() -> str:
+    from app import property_due_diligence_agent
+
+    return property_due_diligence_agent.build_payment_required_header()
 
 
 def test_the_same_inputs_are_stable_across_calls() -> None:

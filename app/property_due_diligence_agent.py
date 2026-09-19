@@ -58,6 +58,7 @@ def build_payment_required_header() -> str:
         network=network,
         price=PRICE,
         resource=res,
+        pay_to=settings.x402_pay_to_address,
         discoverable=settings.bazaar_discoverable,
         description=RESOURCE_DESCRIPTION,
         input_example=DISCOVERY_INPUT_EXAMPLE,
