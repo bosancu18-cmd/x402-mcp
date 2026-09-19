@@ -1,0 +1,1 @@
+Proof: add-only workflow runs on pull_request. Safe to delete after CI is green.
