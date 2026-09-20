@@ -1,15 +1,21 @@
-"""Nashville, TN — short-term rental permits (public Metro open data)."""
+"""Nashville, TN — short-term rental permits (Metro ArcGIS FeatureServer)."""
 
 from __future__ import annotations
 
+import json
 import time
 from typing import Any
 
-from app.city_compliance.models import CitySpec, base_report
-from app.city_compliance.socrata import address_like_clause, soda_get, source_url
+import httpx
 
-PORTAL = "https://data.nashville.gov"
-RESOURCE = "2d8v-ps6s"  # Short Term Rental Permits
+from app.city_compliance.models import CitySpec, base_report
+
+# Metro Nashville Residential Short Term Rental Permits (ArcGIS Hub view).
+# Do not use data.nashville.gov/resource/*.json — those 200-redirect to Hub HTML.
+ARCGIS_URL = (
+    "https://services2.arcgis.com/HdTo6HJqh92wn4D8/arcgis/rest/services/"
+    "Residential_Short_Term_Rental_Permits_view/FeatureServer/0/query"
+)
 
 SPEC = CitySpec(
     code="bna",
@@ -21,18 +27,53 @@ SPEC = CitySpec(
         "Nashville short-term rental permit check: is this property permitted "
         "for STR? Property due diligence agent for Nashville Davidson County "
         "housing compliance open data. GET ?address= → permit number, status, "
-        "type. Live Metro Nashville JSON. Host compliance, HOA, agent workflows."
+        "type. Live Metro Nashville FeatureServer. Host compliance, HOA, agent workflows."
     ),
     sample_address="1 PUBLIC SQ",
     sample_note=(
         "Free fixed-address sample of Nashville short-term rental permits. "
         "Any other Nashville address requires payment."
     ),
-    sources_label="Nashville Open Data — Short Term Rental Permits",
+    sources_label="Metro Nashville ArcGIS — Residential Short Term Rental Permits",
 )
 
 _CACHE_TTL = 900
 _cache: dict[str, tuple[float, dict[str, Any]]] = {}
+
+
+def _require_feature_server_json(resp: httpx.Response) -> dict[str, Any]:
+    """Reject Hub HTML / non-JSON so we never mint a fake unlicensed verdict."""
+    ctype = (resp.headers.get("content-type") or "").lower()
+    if "json" not in ctype and "javascript" not in ctype:
+        raise ValueError(f"Nashville STR feed returned non-JSON ({ctype or 'missing content-type'})")
+    try:
+        data = resp.json()
+    except json.JSONDecodeError as exc:
+        raise ValueError("Nashville STR feed is not JSON") from exc
+    if not isinstance(data, dict):
+        raise ValueError("Nashville STR feed JSON is not an object")
+    if "error" in data:
+        raise RuntimeError(f"Nashville STR FeatureServer error: {data['error']}")
+    if "features" not in data:
+        raise ValueError("Nashville STR FeatureServer response missing features")
+    return data
+
+
+async def _arcgis_query(address: str) -> list[dict[str, Any]]:
+    addr = address.strip().replace("'", "''")
+    where = f"UPPER(Address) LIKE '%{addr.upper()}%'"
+    params = {
+        "where": where,
+        "outFields": "Permit__,Permit_Status,Permit_Type,Address,Expiration_Date,Permit_Subtype_Description",
+        "f": "json",
+        "returnGeometry": "false",
+        "resultRecordCount": "20",
+    }
+    async with httpx.AsyncClient(timeout=20.0, follow_redirects=True) as client:
+        resp = await client.get(ARCGIS_URL, params=params)
+        resp.raise_for_status()
+        data = _require_feature_server_json(resp)
+    return [f.get("attributes") or {} for f in data["features"]]
 
 
 async def check_property(address: str) -> dict[str, Any]:
@@ -41,23 +82,16 @@ async def check_property(address: str) -> dict[str, Any]:
     if hit and time.monotonic() - hit[0] <= _CACHE_TTL:
         return hit[1]
 
-    try:
-        rows = await soda_get(
-            PORTAL,
-            RESOURCE,
-            where=address_like_clause("address", address),
-            limit=20,
-        )
-    except Exception:
-        rows = []
+    rows = await _arcgis_query(address)
 
     registrations = [
         {
-            "address": r.get("address") or r.get("street_address") or r.get("property_address"),
-            "permit_number": r.get("permit_number") or r.get("permit") or r.get("license"),
-            "status": r.get("status") or r.get("permit_status") or r.get("license_status"),
-            "permit_type": r.get("type") or r.get("permit_type"),
-            "expiration_date": r.get("expiration_date") or r.get("expire_date"),
+            "address": r.get("Address"),
+            "permit_number": r.get("Permit__"),
+            "status": r.get("Permit_Status"),
+            "permit_type": r.get("Permit_Type"),
+            "permit_subtype": r.get("Permit_Subtype_Description"),
+            "expiration_date": r.get("Expiration_Date"),
         }
         for r in rows
     ]
@@ -84,7 +118,7 @@ async def check_property(address: str) -> dict[str, Any]:
             "recent": [],
             "note": "STR permit feed only; no code-enforcement join in this product",
         },
-        sources=[source_url(PORTAL, RESOURCE)],
+        sources=[ARCGIS_URL],
         extra={
             "product_scope": "short_term_rental_permit",
             "active_licenses": len(active),
@@ -100,8 +134,15 @@ def discovery_output_example() -> dict[str, Any]:
         "city_name": "Nashville",
         "state": "TN",
         "address_queried": SPEC.sample_address,
-        "compliance_verdict": "str_unlicensed",
-        "registered": False,
-        "registrations": [],
+        "compliance_verdict": "str_licensed_active",
+        "registered": True,
+        "registrations": [
+            {
+                "address": "1 PUBLIC SQ",
+                "permit_number": "2024001234",
+                "status": "ISSUED",
+                "permit_type": "Residential Short Term Rental",
+            }
+        ],
         "violation_cases": {"total": 0, "recent": []},
     }
