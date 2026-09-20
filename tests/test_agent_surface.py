@@ -283,6 +283,10 @@ def test_agentic_market_json_served_at_well_known() -> None:
     assert "us-rental-diligence" in service_ids
     assert "us-city-compliance-network" in service_ids
     assert "x402-mailrail-postmaster" in service_ids
+    city_net = next(s for s in body["services"] if s["id"] == "us-city-compliance-network")
+    assert "bna" in city_net.get("jurisdictions", [])
+    diligence = next(s for s in body["services"] if s["id"] == "us-rental-diligence")
+    assert diligence["url"].endswith("/tasks/us-rental-diligence")
     assert "swarm" in body
     assert len(body["swarm"]["agents"]) == 7
 
