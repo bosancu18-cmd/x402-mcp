@@ -86,11 +86,14 @@ async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
     # Rebuild the pinned listing BEFORE serving: the purchase URL is in the
     # Bazaar catalog, so the first request after a cold start may well be a
     # buyer. Bounded and non-fatal — a slow RPC must not stall the boot.
+    pulse_refresh = None
     if settings.pinned_pulse_product_id:
         from app.swarm import publisher
 
         with suppress(asyncio.TimeoutError):
             await asyncio.wait_for(publisher.restore_pinned_listing(), timeout=45.0)
+        if "PYTEST_CURRENT_TEST" not in os.environ:
+            pulse_refresh = asyncio.create_task(publisher.pulse_refresh_loop())
     try:
         if _mcp_http_app is not None:
             async with mcp.session_manager.run():
@@ -106,6 +109,10 @@ async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
             warmer_task.cancel()
             with suppress(asyncio.CancelledError):
                 await warmer_task
+        if pulse_refresh:
+            pulse_refresh.cancel()
+            with suppress(asyncio.CancelledError):
+                await pulse_refresh
 
 
 class UpstashAnalyticsMiddleware(BaseHTTPMiddleware):
