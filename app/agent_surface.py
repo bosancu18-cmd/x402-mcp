@@ -16,6 +16,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.config import settings
+from app.payment_rails import build_payment_rails
 from app.tools_registry import TOOL_COUNT
 
 # Base mainnet native USDC (canonical cashier asset for this storefront).
@@ -57,6 +58,7 @@ def funding() -> dict[str, Any]:
         "asset": BASE_USDC,
         "assetSymbol": "USDC",
         "payTo": pay_to,
+        "payment_rails": build_payment_rails(),
         "explorer": f"https://basescan.org/address/{pay_to}",
         "tokenExplorer": f"https://basescan.org/token/{BASE_USDC}?a={pay_to}",
         "machineCashier": {
@@ -1331,6 +1333,7 @@ def agentic_market_json() -> dict[str, Any]:
             "asset_address": BASE_USDC,
             "pay_to": pay_to,
             "facilitator_url": settings.cdp_facilitator_url if network == "eip155:8453" else settings.x402_facilitator_url,
+            "payment_rails": build_payment_rails(),
         },
         "services": services,
         "swarm": {
