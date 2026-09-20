@@ -2,7 +2,7 @@
 
 **Project:** x402 Micropayments MCP Server  
 **Status:** ✅ **LIVE on Base mainnet** (◕‿◕) ✨  
-**Last Updated:** Sunday, September 13, 2026  
+**Last Updated:** Saturday, September 19, 2026  
 **GitHub:** https://github.com/kwizzlesurp10-ctrl/x402-mcp  
 
 ---
@@ -10,8 +10,9 @@
 ## 📌 Quick Reference
 
 ### 🔐 Wallet Addresses (⚠️ NEVER commit secrets!)
-- **Seller Address (live cashier / payTo):** `0x8A897D546c22d726b45Fa25F0EBB56207E63fF4e` — sole receive wallet. Canonical in `app/agent_surface.py` (`DEFAULT_PAY_TO`), pinned in `render.yaml` and `smithery.yaml`, cited by `docs/BOUNTIES.md` and `/.well-known/funding.json`. Prior receive addresses are retired; pay **only** this cashier. Live Render dashboard `X402_PAY_TO_ADDRESS` must match this value.
-- **Buyer Address (local testing):** `0xc22c17Fca624dB679B2471f2Bb099E1E29a46209` *(~/secrets/ only)*
+- **Seller Address (live cashier / payTo):** `0x05e1720bB82F86B5bc7940a99FDC702E32256357` — sole receive wallet. Canonical in `app/agent_surface.py` (`DEFAULT_PAY_TO`), pinned in `render.yaml` and `smithery.yaml`, cited by `docs/BOUNTIES.md` and `/.well-known/funding.json`. Prior receive addresses are retired; pay **only** this cashier. Live Render dashboard `X402_PAY_TO_ADDRESS` must match this value.
+- **Buyer Address (hot / local testing):** `0xce2b941f877cc96B26fDd4A7eb2c1eF4B7369a51` — private key in local `.keys/buyer-hot.key` only (gitignored).
+- **Key files:** `.keys/*.key` are **local-only**. Do not commit. Rotate immediately if leaked.
 
 ### 🌐 Live Deployment URLs
 - **Main Storefront:** https://x402-mcp.onrender.com
