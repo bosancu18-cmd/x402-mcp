@@ -312,6 +312,7 @@ def llms_txt() -> str:
     lines = [
         "# x402-mcp storefront",
         "",
+        "> MCP listing: https://smithery.ai/servers/kwizzlesurp10/x402-mcp",
         "> Pay-per-call HTTP APIs over x402: USDC on Base, no API key, no signup.",
         "> A 402 response IS the price quote — read the PAYMENT-REQUIRED header,",
         "> sign an EIP-3009 USDC transfer authorization, retry with",
@@ -1096,20 +1097,24 @@ def mcp_server_card() -> dict[str, Any]:
                 ann_dict = ann
             else:
                 ann_dict = {}
-            live.append(
-                {
-                    "name": name,
-                    "description": getattr(tool, "description", "") or "",
-                    "inputSchema": _simplify_schema(
-                        getattr(tool, "parameters", None) or {"type": "object"}
-                    ),
-                    "annotations": {
-                        "readOnlyHint": ann_dict.get("readOnlyHint"),
-                        "destructiveHint": ann_dict.get("destructiveHint"),
-                        "openWorldHint": ann_dict.get("openWorldHint"),
-                    },
-                }
+            entry = {
+                "name": name,
+                "description": getattr(tool, "description", "") or "",
+                "inputSchema": _simplify_schema(
+                    getattr(tool, "parameters", None) or {"type": "object"}
+                ),
+                "annotations": {
+                    "readOnlyHint": ann_dict.get("readOnlyHint"),
+                    "destructiveHint": ann_dict.get("destructiveHint"),
+                    "openWorldHint": ann_dict.get("openWorldHint"),
+                },
+            }
+            out = getattr(tool, "output_schema", None) or getattr(
+                tool, "outputSchema", None
             )
+            if out:
+                entry["outputSchema"] = _simplify_schema(out)
+            live.append(entry)
         if live:
             tools = live
         for prompt in _mcp._prompt_manager.list_prompts():
