@@ -89,6 +89,9 @@ def test_server_card_has_annotations_and_param_descriptions() -> None:
         props = (tool.get("inputSchema") or {}).get("properties") or {}
         for pname, spec in props.items():
             assert spec.get("description"), f"{tool['name']}.{pname}"
+        assert "outputSchema" in tool, tool["name"]
+    prompt_names = {p["name"] for p in data["prompts"]}
+    assert "x402.sell_api" in prompt_names
     assert isinstance(data["prompts"], list) and data["prompts"]
     assert isinstance(data["resources"], list) and data["resources"]
     assert data["configSchema"].get("required", []) == []
@@ -100,6 +103,7 @@ async def test_prompts_and_resources_are_registered() -> None:
     prompt_names = {p.name for p in prompts}
     resource_names = {r.name for r in resources}
     assert "x402.buy_paid_api" in prompt_names
+    assert "x402.sell_api" in prompt_names
     assert "city.compliance_path" in prompt_names
     assert "x402.instructions" in resource_names
     assert "x402.catalog" in resource_names
