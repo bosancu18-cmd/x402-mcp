@@ -133,6 +133,7 @@ def _transport_security() -> TransportSecuritySettings:
 mcp = FastMCP(
     "x402-micropayments",
     instructions=INSTRUCTIONS,
+    website_url=settings.public_base_url,
     transport_security=_transport_security(),
     # JSON bodies (not SSE) so Smithery Connect and other HTTP gateways can
     # parse initialize/tools/list. Stateless so proxies that drop
@@ -1068,6 +1069,30 @@ def prompt_buy_paid_api(
         "and this host has EVM_PRIVATE_KEY, call x402.pay_and_fetch with "
         "max_price_usdc set to your ceiling. If there is no spend key, return "
         "the 402 probe and how_to_pay instead of paying."
+    )
+
+
+@mcp.prompt(
+    name="x402.sell_api",
+    title="Sell an HTTP API over x402",
+    description="Walk an agent through building seller PAYMENT-REQUIRED terms and listing an endpoint in Bazaar.",
+)
+def prompt_sell_api(
+    resource_url: Desc[
+        str,
+        Field(description="Public URL of the HTTP resource to sell. Example: https://example.com/data"),
+    ],
+    price: Desc[
+        str,
+        Field(description="List price string. Example: '$0.01'."),
+    ] = "$0.01",
+) -> str:
+    return (
+        f"Call x402.networks to pick a CAIP-2 network, then x402.build_seller "
+        f"with resource_url={resource_url!r} and price={price!r}. "
+        "Set discoverable=true plus discovery_method/input/output examples so Bazaar "
+        "can catalog the endpoint after a settled payment. Use x402.verify on inbound "
+        "PAYMENT-SIGNATURE before releasing paid content."
     )
 
 
