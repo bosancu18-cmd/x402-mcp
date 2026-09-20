@@ -83,6 +83,12 @@ OPERATOR_PATHS: tuple[str, ...] = (
     "/events",
     "/stats",
     "/dashboard",
+    "/mailrail",
+    "/mailrail/health",
+    "/mailrail/ledger",
+    "/mailrail/inbox",
+    "/mailrail/stats",
+    "/mailrail/inbound",
     "/quota/{agent_id}",
 )
 

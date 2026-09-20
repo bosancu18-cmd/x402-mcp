@@ -41,6 +41,10 @@ export const glossary: Record<string, { short: string; long: string }> = {
     short: "Blockchain network for payments (e.g., Base Mainnet, Sepolia)",
     long: "x402 supports multiple networks identified by CAIP-2 IDs. Base Sepolia (eip155:84532) is the testnet. Base Mainnet (eip155:8453) uses real USDC.",
   },
+  AgentMail: {
+    short: "Operator inbox/outbox for receipts and city-call alerts",
+    long: "AgentMail is MailRail's operator viewer. Outbox holds settlement receipts and city alerts; inbound is POST /mailrail/inbound. Message bodies require Authorization: Bearer OPERATOR_TOKEN. It is not an x402 payment rail.",
+  },
 };
 
 export function getTooltip(term: string): string | undefined {

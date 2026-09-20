@@ -1,37 +1,30 @@
+/**
+ * @vitest-environment jsdom
+ */
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { MailRailPanel } from "./MailRailPanel";
-
-vi.mock("../api/client", () => ({
-  api: {
-    mailrailHealth: vi.fn().mockResolvedValue({
-      ok: true,
-      enabled: true,
-      provider: "mock",
-      from_address: "agents@x402.test",
-      admin_recipient: "ops@x402.test",
-      has_api_key: false,
-      has_webhook: false,
-      has_smtp: false,
-    }),
-    mailrailStats: vi.fn().mockResolvedValue({
-      outbound_total: 1,
-      inbound_total: 0,
-      dedup_keys_cached: 1,
-    }),
-    mailrailLedger: vi.fn().mockResolvedValue({
-      events: [{ subject: "City catalog browse", to: "ops@x402.test", ts: new Date().toISOString() }],
-      count: 1,
-    }),
-    mailrailInbox: vi.fn().mockResolvedValue({ inbox: [], count: 0 }),
-  },
-}));
+import { clearOperatorToken } from "@dashboard/lib/operatorToken";
 
 describe("MailRailPanel", () => {
-  it("renders AgentMail heading and outbox subject", async () => {
-    render(<MailRailPanel refreshKey={1} />);
-    expect(screen.getByText("AgentMail / MailRail")).toBeInTheDocument();
-    expect(await screen.findByText("City catalog browse")).toBeInTheDocument();
-    expect(screen.getByText(/outbox 1 · inbox 0/)).toBeInTheDocument();
+  afterEach(() => {
+    clearOperatorToken();
+    vi.unstubAllGlobals();
+  });
+
+  it("renders AgentMail heading on the operator console", async () => {
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/mailrail/health")) {
+        return new Response(JSON.stringify({ ok: true, enabled: false, provider: "mock" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      throw new Error(`unexpected ${url}`);
+    });
+    render(<MailRailPanel refreshKey={1} apiBase="" />);
+    expect(screen.getByText("AgentMail")).toBeInTheDocument();
+    expect(await screen.findByLabelText("OPERATOR_TOKEN")).toBeInTheDocument();
   });
 });

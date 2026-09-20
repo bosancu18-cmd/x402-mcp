@@ -719,6 +719,12 @@ def _mailrail_operator_guard(request: Request) -> None:
         raise HTTPException(status_code=401, detail={"error": "unauthorized"})
 
 
+@app.get("/mailrail", include_in_schema=False)
+async def mailrail_view() -> RedirectResponse:
+    """Operator AgentMail UI on Mission Control — not a public product surface."""
+    return RedirectResponse(url="/dashboard#panel-mailrail", status_code=302)
+
+
 @app.get("/mailrail/health")
 async def mailrail_health() -> dict:
     """Public readiness only — no addresses, keys, or message bodies."""

@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { isValidApiBase, writeStoredApiBase } from "../config";
 import { setApiBase } from "../api/client";
+import {
+  clearOperatorToken,
+  hasOperatorToken,
+  writeOperatorToken,
+} from "@dashboard/lib/operatorToken";
 
 type SettingsDialogProps = {
   open: boolean;
@@ -17,7 +22,9 @@ const PRESETS = [
 
 export function SettingsDialog({ open, apiBase, onClose, onSaved }: SettingsDialogProps) {
   const [draft, setDraft] = useState(apiBase);
+  const [tokenDraft, setTokenDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [tokenSaved, setTokenSaved] = useState(hasOperatorToken);
 
   if (!open) return null;
 
@@ -29,6 +36,11 @@ export function SettingsDialog({ open, apiBase, onClose, onSaved }: SettingsDial
     }
     writeStoredApiBase(trimmed);
     setApiBase(trimmed);
+    if (tokenDraft.trim()) {
+      writeOperatorToken(tokenDraft);
+      setTokenDraft("");
+      setTokenSaved(true);
+    }
     onSaved(trimmed);
     onClose();
   };
@@ -70,6 +82,30 @@ export function SettingsDialog({ open, apiBase, onClose, onSaved }: SettingsDial
           />
         </label>
         {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
+        <label style={{ display: "block", margin: "12px 0 8px" }}>
+          <span style={{ fontSize: 13 }}>OPERATOR_TOKEN (AgentMail inbox / outbox)</span>
+          <input
+            type="password"
+            autoComplete="off"
+            value={tokenDraft}
+            onChange={(e) => setTokenDraft(e.target.value)}
+            style={{ width: "100%", marginTop: 4 }}
+            placeholder={tokenSaved ? "Token saved on this device — paste to replace" : "Required to read ledgers"}
+            aria-label="OPERATOR_TOKEN"
+          />
+        </label>
+        {tokenSaved && (
+          <button
+            type="button"
+            onClick={() => {
+              clearOperatorToken();
+              setTokenSaved(false);
+            }}
+            style={{ fontSize: 12, marginBottom: 8 }}
+          >
+            Forget saved token
+          </button>
+        )}
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "12px 0" }}>
           {PRESETS.map((p) => (
             <button key={p.value} type="button" onClick={() => setDraft(p.value)} style={{ fontSize: 12 }}>

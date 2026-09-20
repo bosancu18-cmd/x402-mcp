@@ -43,7 +43,8 @@ cd desktop-admin && pnpm dev:electron
 - Stats, wallet, OS health, pulse
 - Spend + revenue ledgers with CSV/JSONL export
 - 402 inspector
-- MailRail outbox/inbox panel (`/mailrail/*`)
+- MailRail outbox/inbox panel (`/mailrail/*`, bearer `OPERATOR_TOKEN`)
+- AgentMail viewer on Mission Control: `/dashboard#panel-mailrail` (also `GET /mailrail` redirects here)
 - Seller wizard (POST gated by `DASHBOARD_ACTIONS` on **server** and `VITE_DASHBOARD_ACTIONS` in UI)
 
 ## Build

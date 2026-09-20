@@ -14,6 +14,7 @@ import { RateSparkline } from "./components/RateSparkline";
 import { SellerWizard } from "./components/SellerWizard";
 import { VirtualizedLedger } from "./components/VirtualizedLedger";
 import { WalletPanel } from "./components/WalletPanel";
+import { MailRailPanel } from "./components/MailRailPanel";
 import { OperatorHeader } from "./components/OperatorHeader";
 import { demoActivity, demoDoctor, demoOs, demoRevenue, demoSpend, demoStats } from "./fixtures/demo";
 import { explain } from "./glossary";
@@ -345,6 +346,22 @@ export default function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  useEffect(() => {
+    const scrollIfMail = () => {
+      const raw = window.location.hash.replace(/^#/, "");
+      if (raw === "agentmail" || raw === "panel-mailrail") {
+        document.getElementById("panel-mailrail")?.scrollIntoView({ block: "start" });
+      }
+    };
+    scrollIfMail();
+    const timer = window.setTimeout(scrollIfMail, 80);
+    window.addEventListener("hashchange", scrollIfMail);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("hashchange", scrollIfMail);
+    };
+  }, []);
+
   const finances = useMemo(
     () => calculateFinances(revenue, spend),
     [revenue, spend],
@@ -388,6 +405,7 @@ export default function App() {
       { id: "inspector", label: "Go to 402 Inspector", run: () => scrollTo("panel-inspector") },
       { id: "spend", label: "Go to spend ledger", run: () => scrollTo("panel-spend") },
       { id: "revenue", label: "Go to revenue ledger", run: () => scrollTo("panel-revenue") },
+      { id: "agentmail", label: "Go to AgentMail", run: () => scrollTo("panel-mailrail") },
       { id: "demo", label: "Toggle demo mode", run: () => setDemo((d) => !d) },
       { id: "density-guided", label: "Density: Guided", run: () => setDensity("guided") },
       { id: "density-operator", label: "Density: Operator", run: () => setDensity("operator") },
@@ -681,6 +699,8 @@ export default function App() {
         </div>
 
         <SwarmAssessmentPanel assessment={swarmAssessment} density={density} />
+
+        <MailRailPanel />
 
         <section id="panel-activity" className="panel" style={{ gridColumn: "span 8" }}>
           <h3>Activity</h3>

@@ -76,3 +76,18 @@ def test_public_health_does_not_dump_recipients() -> None:
     assert "admin_recipient" not in body
     assert "from_address" not in body
     assert "has_api_key" not in body
+
+
+def test_mailrail_view_redirects_to_dashboard_panel() -> None:
+    client = TestClient(app, follow_redirects=False)
+    res = client.get("/mailrail")
+    assert res.status_code == 302
+    location = res.headers["location"]
+    assert "/dashboard" in location
+    assert "panel-mailrail" in location
+
+
+def test_mailrail_paths_absent_from_public_openapi() -> None:
+    spec = TestClient(app).get("/openapi.json").json()
+    leaked = [path for path in spec.get("paths", {}) if path.startswith("/mailrail")]
+    assert leaked == []

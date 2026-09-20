@@ -7,6 +7,8 @@ export const glossary: Record<string, string> = {
   settle: "On-chain confirmation that a payment was accepted by the seller.",
   probe: "HTTP request that reads PAYMENT-REQUIRED headers without spending funds.",
   net: "Revenue minus mainnet spend from your ledgers. Goal is net ≥ 0.",
+  AgentMail:
+    "Operator inbox/outbox for settlement receipts and city-call alerts (MailRail). Message bodies require OPERATOR_TOKEN.",
 };
 
 export function explain(term: string): string {

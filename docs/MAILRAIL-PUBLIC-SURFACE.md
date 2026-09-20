@@ -21,6 +21,8 @@ That is open-relay + inbox disclosure on a public seller host. **Do not list the
 | `POST /mailrail/inbound` | No | `Authorization: Bearer $OPERATOR_TOKEN` (fail closed if token unset) |
 | `GET /mailrail/ledger` / `inbox` / `stats` | No | Same bearer gate |
 | `GET /mailrail/health` | Yes, readiness only | No message bodies; no admin recipient |
+| `GET /mailrail` | Redirect only | 302 to `/dashboard#panel-mailrail` (Mission Control AgentMail viewer). Ledgers still bearer-gated. |
+| Mission Control AgentMail panel | Operator UI | `/dashboard#panel-mailrail` — paste `OPERATOR_TOKEN` to read inbox/outbox |
 | Internal `mailrail.send_agent_mail` from settlement code | Yes (server-side) | Not an HTTP/MCP public tool |
 
 Public Smithery catalog is x402 / commerce / swarm / pulse / ops / city only.

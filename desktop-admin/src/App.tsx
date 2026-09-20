@@ -263,7 +263,7 @@ export default function App() {
         <PulsePanel pulse={pulse} />
         <SwarmActivity events={activity} products={products} revenue={swarmRevenue ?? undefined} />
 
-        <MailRailPanel refreshKey={refreshKey} />
+        <MailRailPanel refreshKey={refreshKey} apiBase={getApiBase()} />
 
         <section id="panel-activity" className="panel" style={{ gridColumn: "span 8" }}>
           <h3>Activity stream</h3>
