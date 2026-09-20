@@ -79,6 +79,7 @@ def test_dashboard_assets_are_served() -> None:
     assert "javascript" in js_resp.headers.get("content-type", "") or js_resp.content[:20]
     # Same-origin SPA: no hard-coded remote API host in the bundle.
     assert b"x402-mission-control.onrender.com" not in js_resp.content
+    assert b"https://x402-mcp.onrender.com/mailrail" not in js_resp.content
 
 
 def test_dashboard_api_surface_is_live() -> None:

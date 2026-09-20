@@ -9,8 +9,13 @@ COPY dashboard/package.json dashboard/pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY dashboard/ .
 # Same-origin against the FastAPI host that serves this bundle.
+# dashboard/.env.production points Vercel at the Render API; the API-hosted
+# SPA must not bake that host in or /dashboard on a custom origin fetches
+# the wrong MailRail ledgers.
 ENV VITE_API_BASE_URL=
-RUN pnpm run build
+ENV VITE_PUBLIC_API_BASE_URL=
+RUN printf 'VITE_PUBLIC_API_BASE_URL=\nVITE_API_BASE_URL=\n' > .env.production.local \
+ && pnpm run build
 
 FROM python:3.12-slim
 

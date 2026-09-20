@@ -50,6 +50,7 @@ export function MailRailPanel({ refreshKey = 0, apiBase }: MailRailPanelProps) {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [load, setLoad] = useState<MailrailLoadResult | null>(null);
+  const [reloadNonce, setReloadNonce] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,7 +61,7 @@ export function MailRailPanel({ refreshKey = 0, apiBase }: MailRailPanelProps) {
     return () => {
       cancelled = true;
     };
-  }, [apiBase, refreshKey, tokenPresent]);
+  }, [apiBase, refreshKey, tokenPresent, reloadNonce]);
 
   const health = load && (load.ok ? load.data.health : load.health);
   const stats = load?.ok ? load.data.stats : null;
@@ -149,7 +150,12 @@ export function MailRailPanel({ refreshKey = 0, apiBase }: MailRailPanelProps) {
       )}
 
       {load && !load.ok && load.reason !== "unauthorized" && (
-        <p style={{ color: "var(--red)", fontSize: 13 }}>{load.message}</p>
+        <div style={{ marginBottom: 12 }}>
+          <p style={{ color: "var(--red)", fontSize: 13, margin: "0 0 8px" }}>{load.message}</p>
+          <button type="button" onClick={() => setReloadNonce((n) => n + 1)}>
+            Retry MailRail
+          </button>
+        </div>
       )}
 
       {load?.ok && (
