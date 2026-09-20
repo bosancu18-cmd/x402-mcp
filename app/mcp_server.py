@@ -965,6 +965,11 @@ async def mailrail_send(
     ] = None,
 ) -> str:
     from app import mailrail
+    from app.mailrail_agent import refuse_if_not_mailrail_agent
+
+    refused = refuse_if_not_mailrail_agent(agent_id)
+    if refused:
+        return json.dumps(refused, indent=2)
 
     return await _execute_tool(
         "mailrail.send",
@@ -990,6 +995,11 @@ async def mailrail_status(
     ] = None,
 ) -> str:
     from app.config import settings
+    from app.mailrail_agent import refuse_if_not_mailrail_agent
+
+    refused = refuse_if_not_mailrail_agent(agent_id)
+    if refused:
+        return json.dumps(refused, indent=2)
 
     return await _execute_tool(
         "mailrail.status",
@@ -1028,6 +1038,11 @@ async def mailrail_inbound(
     ] = None,
 ) -> str:
     from app import mailrail
+    from app.mailrail_agent import refuse_if_not_mailrail_agent
+
+    refused = refuse_if_not_mailrail_agent(agent_id)
+    if refused:
+        return json.dumps(refused, indent=2)
 
     return await _execute_tool(
         "mailrail.inbound",
