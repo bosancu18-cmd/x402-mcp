@@ -146,7 +146,7 @@ jobs:
     if: needs.classify.outputs.mutation != 'true'
     runs-on: ubuntu-latest
     steps:
-      - run: echo "add-only: no existing files mutated"
+      - run: echo "add-only ok — no existing files mutated"
 
   operator-approve:
     needs: classify
