@@ -221,15 +221,6 @@ async def get_agent_card(
     )
 
 
-@mcp.tool(
-    name="get_agent_card",
-    title="A2A Agent ID Card (compat)",
-    description=(
-        "Back-compat alias for x402.agent_card. "
-        "Returns the A2A Protocol v1.0 Agent ID Card and MCP server card."
-    ),
-    annotations=READONLY,
-)
 async def get_agent_card_compat(
     target_id: Desc[
         str | None,
@@ -950,15 +941,6 @@ async def check_us_city_property(
     )
 
 
-@mcp.tool(
-    name="mailrail.send",
-    title="Send agent notification via MailRail",
-    description=(
-        "Dispatch transactional receipts, alert notifications, or agent communication over MailRail. "
-        "Supports mock ledger, Resend API, SMTP, or Webhooks."
-    ),
-    annotations=WRITE_IDEMPOTENT,
-)
 async def mailrail_send(
     to: Desc[
         str,
@@ -1000,14 +982,6 @@ async def mailrail_send(
     )
 
 
-@mcp.tool(
-    name="mailrail.status",
-    title="Check MailRail health and configuration",
-    description=(
-        "Inspect MailRail provider status, active sender address, and dispatch capabilities."
-    ),
-    annotations=READONLY,
-)
 async def mailrail_status(
     agent_id: Desc[
         str | None,
@@ -1034,14 +1008,6 @@ async def mailrail_status(
     )
 
 
-@mcp.tool(
-    name="mailrail.inbound",
-    title="Ingest inbound agent message or webhook",
-    description=(
-        "Ingest an incoming message or webhook to the MailRail Postmaster agent with mention defusing and inbox ledger recording."
-    ),
-    annotations=WRITE_IDEMPOTENT,
-)
 async def mailrail_inbound(
     sender: Desc[
         str,

@@ -428,7 +428,7 @@ def agent_card() -> dict[str, Any]:
             "name": "A2A Agent Card & Capabilities Inspector",
             "description": (
                 "Inspect this host's A2A Protocol v1.0 Agent ID Card, MCP server card, "
-                "skills, and payment rails. Free. MCP tool: get_agent_card. "
+                "skills, and payment rails. Free. MCP tool: x402.agent_card. "
                 f"Resource: x402://agent-card. HTTP: GET {base}/.well-known/agent-card.json."
             ),
             "tags": [
@@ -604,10 +604,9 @@ def agent_card() -> dict[str, Any]:
             "id": "mailrail-postmaster",
             "name": "MailRail Postmaster & In/Out Dispatcher",
             "description": (
-                "Dedicated agent communications gateway for transactional notifications, "
-                "inbound webhook routing, settlement receipts, and mention defusing. "
-                f"HTTP: POST {base}/mailrail/inbound, GET {base}/mailrail/inbox, GET {base}/mailrail/stats. "
-                "MCP tools: mailrail.send, mailrail.status, mailrail.inbound."
+                "Operator-only communications rail for settlement receipts and inbound "
+                "postmaster ingest. Not a public MCP tool. HTTP inbound/ledger/inbox/stats "
+                f"require Authorization Bearer OPERATOR_TOKEN. Health: GET {base}/mailrail/health."
             ),
             "tags": [
                 "mailrail",
@@ -1079,20 +1078,57 @@ def mcp_server_card() -> dict[str, Any]:
 
     mcp_manifest = build_mcp_manifest()
     tools = list(mcp_manifest["tools"])
+    prompts: list[dict[str, Any]] = []
+    resources: list[dict[str, Any]] = []
     try:
-        from app.mcp_server import mcp as _mcp
+        from app.mcp_server import _simplify_schema, mcp as _mcp
+        from app.tools_registry import is_public_mcp_tool
 
         live = []
         for tool in _mcp._tool_manager._tools.values():
+            name = getattr(tool, "name", None) or getattr(tool, "key", "")
+            if not is_public_mcp_tool(name):
+                continue
+            ann = getattr(tool, "annotations", None)
+            if hasattr(ann, "model_dump"):
+                ann_dict = ann.model_dump(exclude_none=True)
+            elif isinstance(ann, dict):
+                ann_dict = ann
+            else:
+                ann_dict = {}
             live.append(
                 {
-                    "name": getattr(tool, "name", None) or getattr(tool, "key", ""),
+                    "name": name,
                     "description": getattr(tool, "description", "") or "",
-                    "inputSchema": getattr(tool, "parameters", None) or {"type": "object"},
+                    "inputSchema": _simplify_schema(
+                        getattr(tool, "parameters", None) or {"type": "object"}
+                    ),
+                    "annotations": {
+                        "readOnlyHint": ann_dict.get("readOnlyHint"),
+                        "destructiveHint": ann_dict.get("destructiveHint"),
+                        "openWorldHint": ann_dict.get("openWorldHint"),
+                    },
                 }
             )
         if live:
             tools = live
+        for prompt in _mcp._prompt_manager.list_prompts():
+            prompts.append(
+                {
+                    "name": prompt.name,
+                    "description": prompt.description or "",
+                }
+            )
+        for resource in _mcp._resource_manager.list_resources():
+            resources.append(
+                {
+                    "uri": str(resource.uri),
+                    "name": resource.name,
+                    "description": resource.description or "",
+                    "mimeType": getattr(resource, "mime_type", None)
+                    or getattr(resource, "mimeType", None),
+                }
+            )
     except Exception:
         pass
 
@@ -1111,7 +1147,6 @@ def mcp_server_card() -> dict[str, Any]:
         "transport": {
             "type": "streamable-http",
             "url": f"{base}/mcp/mcp",
-            "sse_url": f"{base}/mcp/sse",
         },
         "authentication": {
             "type": "x402",
@@ -1128,6 +1163,7 @@ def mcp_server_card() -> dict[str, Any]:
         },
         "configSchema": {
             "type": "object",
+            "required": [],
             "properties": {
                 "X402_PAY_TO_ADDRESS": {
                     "type": "string",
@@ -1146,8 +1182,8 @@ def mcp_server_card() -> dict[str, Any]:
             }
         ],
         "tools": tools,
-        "prompts": True,
-        "resources": True,
+        "prompts": prompts,
+        "resources": resources,
         "homepage": base,
         "repository": {
             "type": "git",

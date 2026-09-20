@@ -74,7 +74,8 @@ def test_dispatch_receipt_to_mailrail() -> None:
         "status": "settled",
     }
     resp = dispatch_receipt_to_mailrail("http://testserver", receipt, client=test_client)
-    assert resp.get("status") in ("accepted", "received") or "inbound_id" in resp or "mail_id" in resp
+    # Public origin refuses unauthenticated MailRail inbound (operator token required).
+    assert resp.get("status") == "unacknowledged" or resp.get("http_status") == 401
 
 
 def test_run_buyer_workflow_dry_run() -> None:

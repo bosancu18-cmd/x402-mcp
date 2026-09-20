@@ -696,24 +696,36 @@ async def stats_snapshot() -> dict:
     return data
 
 
+def _mailrail_operator_guard(request: Request) -> None:
+    """Fail closed: MailRail message surfaces need OPERATOR_TOKEN bearer auth."""
+    token = settings.operator_token
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "error": "unauthorized",
+                "detail": "MailRail send/inbound/ledgers require OPERATOR_TOKEN",
+            },
+        )
+    auth = request.headers.get("Authorization", "")
+    if auth != f"Bearer {token}":
+        raise HTTPException(status_code=401, detail={"error": "unauthorized"})
+
+
 @app.get("/mailrail/health")
 async def mailrail_health() -> dict:
-    """MailRail communication rail readiness check."""
+    """Public readiness only — no addresses, keys, or message bodies."""
     return {
         "ok": True,
         "enabled": settings.mailrail_enabled,
         "provider": settings.mailrail_provider,
-        "from_address": settings.mailrail_from_address,
-        "admin_recipient": settings.mailrail_admin_recipient,
-        "has_api_key": bool(settings.mailrail_api_key),
-        "has_webhook": bool(settings.mailrail_webhook_url),
-        "has_smtp": bool(settings.mailrail_smtp_url),
     }
 
 
 @app.get("/mailrail/ledger")
-async def mailrail_ledger(limit: int = 50) -> dict:
-    """Read recent MailRail logged dispatches (newest first)."""
+async def mailrail_ledger(request: Request, limit: int = 50) -> dict:
+    """Read recent MailRail logged dispatches (newest first). Operator-only."""
+    _mailrail_operator_guard(request)
     from app.mailrail import get_outbox_messages
 
     events = get_outbox_messages(limit=limit)
@@ -721,22 +733,23 @@ async def mailrail_ledger(limit: int = 50) -> dict:
 
 
 @app.post("/mailrail/inbound")
-async def mailrail_inbound(payload: models.InboundMailInput) -> dict:
-    """Ingest and route an incoming message to the MailRail Postmaster."""
+async def mailrail_inbound(request: Request, payload: models.InboundMailInput) -> dict:
+    """Ingest inbound postmaster mail. Operator-only."""
+    _mailrail_operator_guard(request)
     from app.mailrail import process_inbound_mail
 
-    result = process_inbound_mail(
+    return process_inbound_mail(
         sender=payload.sender,
         subject=payload.subject,
         body=payload.body,
         metadata=payload.metadata,
     )
-    return result
 
 
 @app.get("/mailrail/inbox")
-async def mailrail_inbox(limit: int = 50) -> dict:
-    """Read recent MailRail inbound messages (newest first)."""
+async def mailrail_inbox(request: Request, limit: int = 50) -> dict:
+    """Read recent MailRail inbound messages (newest first). Operator-only."""
+    _mailrail_operator_guard(request)
     from app.mailrail import get_inbox_messages
 
     events = get_inbox_messages(limit=limit)
@@ -744,8 +757,9 @@ async def mailrail_inbox(limit: int = 50) -> dict:
 
 
 @app.get("/mailrail/stats")
-async def mailrail_stats() -> dict:
-    """Real-time telemetry and stats for MailRail In/Out Postmaster."""
+async def mailrail_stats(request: Request) -> dict:
+    """MailRail in/out counts. Operator-only (derived from message ledgers)."""
+    _mailrail_operator_guard(request)
     from app.mailrail import get_mailrail_stats
 
     return get_mailrail_stats()
