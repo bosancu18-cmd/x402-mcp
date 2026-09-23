@@ -154,6 +154,8 @@ def _cors_origins() -> list[str]:
     origins = [
         "https://x402-mission-control.vercel.app",
         "https://kwizzle-landing-page.onrender.com",
+        "https://kwizzlesurp.com",
+        "https://www.kwizzlesurp.com",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:5174",
