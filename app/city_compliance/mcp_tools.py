@@ -207,9 +207,26 @@ async def check_us_city_property(
             payment_signature = req.params.meta.get("x402/payment")
 
     if not payment_signature:
-        probe = await x402_services.get_payment_requirements(
-            GetPaymentRequirementsInput(url=url, method="GET")
-        )
+        try:
+            probe = await x402_services.get_payment_requirements(
+                GetPaymentRequirementsInput(url=url, method="GET")
+            )
+        except httpx.RequestError as exc:
+            return CallToolResult(
+                isError=True,
+                content=[TextContent(type="text", text=_json.dumps({
+                    "error": "upstream_unavailable",
+                    "detail": f"failed to fetch payment requirements: {exc}"
+                }))]
+            )
+        except Exception as exc:
+            return CallToolResult(
+                isError=True,
+                content=[TextContent(type="text", text=_json.dumps({
+                    "error": "internal_error",
+                    "detail": f"failed to generate payment requirements: {exc}"
+                }))]
+            )
         payment_required = probe.get("payment_required")
         
         agentmail.notify_city_call(
@@ -239,8 +256,25 @@ async def check_us_city_property(
         )
 
     # We have a signature, make the request
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.get(url, headers={"PAYMENT-SIGNATURE": payment_signature})
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(url, headers={"PAYMENT-SIGNATURE": payment_signature})
+    except httpx.RequestError as exc:
+        return CallToolResult(
+            isError=True,
+            content=[TextContent(type="text", text=_json.dumps({
+                "error": "upstream_unavailable",
+                "detail": f"failed to complete payment request: {exc}"
+            }))]
+        )
+    except Exception as exc:
+        return CallToolResult(
+            isError=True,
+            content=[TextContent(type="text", text=_json.dumps({
+                "error": "internal_error",
+                "detail": f"unexpected error during payment request: {exc}"
+            }))]
+        )
         
     payment_response = resp.headers.get("PAYMENT-RESPONSE")
     

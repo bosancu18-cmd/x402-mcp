@@ -181,25 +181,35 @@ async def test_mcp_check_probe_sends_agentmail(
 async def test_mcp_check_paid_sends_agentmail(
     mail_ledger: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr(settings, "evm_private_key", "0x" + "ab" * 32)
+    import httpx
+    
+    class FakeResponse:
+        status_code = 200
+        headers = {"PAYMENT-RESPONSE": "test-b64"}
+        text = json.dumps({"compliance_verdict": "licensed_clean"})
+        def json(self):
+            return {"compliance_verdict": "licensed_clean"}
 
-    async def fake_pay(params):  # noqa: ANN001
-        return {
-            "status_code": 200,
-            "url": str(params.url),
-            "body": json.dumps({"compliance_verdict": "licensed_clean"}),
-            "payment_settled": True,
-            "payment_settlement": {
-                "success": True,
-                "transaction": "0xpaidtx",
-                "payer": "0xpayer",
-            },
-            "sdk": "mock",
-        }
+    class FakeClient:
+        async def __aenter__(self): return self
+        async def __aexit__(self, *args): pass
+        async def get(self, *args, **kwargs):
+            return FakeResponse()
 
-    monkeypatch.setattr(city_mcp.x402_services, "pay_and_fetch", fake_pay)
+    monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: FakeClient())
+
+    class FakeReq:
+        class Params:
+            meta = {"x402/payment": "fake-sig"}
+        params = Params()
+        
+    class FakeCtx:
+        class ReqCtx:
+            request = FakeReq()
+        request_context = ReqCtx()
+
     await city_mcp.check_us_city_property(
-        "chi", "121 N LaSalle St", agent_id="paid-agent"
+        "chi", "121 N LaSalle St", agent_id="paid-agent", ctx=FakeCtx()
     )
     records = _ledger_records(mail_ledger)
     assert len(records) == 1
