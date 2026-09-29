@@ -28,3 +28,5 @@ secrets/
 # Wallet key material — addresses live in docs; private keys stay local
 .keys/**
 !.keys/README.txt
+
+.snapshots/

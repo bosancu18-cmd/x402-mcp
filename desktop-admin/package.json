@@ -8,7 +8,7 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "vite",
-    "dev:electron": "concurrently -k \"vite\" \"wait-on http://127.0.0.1:5174 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5174 electron .\"",
+    "dev:electron": "concurrently -k \"vite\" \"wait-on http://127.0.0.1:5174 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5174 electron . --no-sandbox --remote-debugging-port=9222\"",
     "build": "vite build",
     "build:electron": "pnpm build && electron-builder --dir",
     "preview": "vite preview",
