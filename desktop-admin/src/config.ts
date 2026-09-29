@@ -33,3 +33,11 @@ export function isValidApiBase(url: string): boolean {
     return false;
   }
 }
+
+export function readStoredOperatorToken(): string {
+  return localStorage.getItem("x402-operator-token") || "mission-control-admin";
+}
+
+export function writeStoredOperatorToken(token: string): void {
+  localStorage.setItem("x402-operator-token", token);
+}

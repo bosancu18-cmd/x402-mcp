@@ -1,5 +1,4 @@
-import { useRef } from "react";
-import { useVirtualizer } from "@tanstack/react-virtual";
+
 import type { LedgerRow } from "../api/client";
 import { CopyButton } from "./CopyButton";
 import { basescanUrl, truncateHash } from "../utils/decode402";
@@ -15,65 +14,61 @@ type Props = {
 };
 
 export function VirtualizedLedger({ rows, kind, filterNetwork, filterAgent }: Props) {
-  const parentRef = useRef<HTMLDivElement>(null);
   const filtered = rows.filter((row) => {
     if (filterNetwork && String(row.network ?? "") !== filterNetwork) return false;
     if (filterAgent && String(row.agent_id ?? "") !== filterAgent) return false;
     return true;
   });
 
-  const virtualizer = useVirtualizer({
-    count: filtered.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 28,
-    overscan: 8,
-  });
-
   const color = kind === "spend" ? "var(--usdc)" : "var(--green)";
 
+  if (filtered.length === 0) {
+    return <div style={{ color: "var(--text-muted)", fontSize: 13, padding: 8 }}>No matching records.</div>;
+  }
+
   return (
-    <div ref={parentRef} style={{ maxHeight: 220, overflow: "auto" }}>
-      <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
-        {virtualizer.getVirtualItems().map((item) => {
-          const row = filtered[item.index];
+    <div style={{ maxHeight: 220, overflow: "auto" }}>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+        {filtered.map((row, i) => {
           const atomic = ledgerRowAtomic(row);
           const ts = String(row.ts ?? "");
-          const tx = row.tx ? String(row.tx) : null;
-          const network = String(row.network ?? "");
+
           return (
-            <div
-              key={item.key}
-              className="mono"
+            <li
+              key={i}
               style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "100%",
-                height: item.size,
-                transform: `translateY(${item.start}px)`,
-                fontSize: 12,
                 display: "flex",
-                alignItems: "center",
-                gap: 8,
                 justifyContent: "space-between",
+                alignItems: "center",
+                padding: "8px 0",
+                borderBottom: "1px solid var(--border)",
+                fontSize: 12,
               }}
             >
-              <span title={ts}>{relativeTime(ts)}</span>
-              <span style={{ color }} title={`${atomic} atomic`}>
-                {formatUsdcAtomic(atomic)}
-              </span>
-              {tx ? (
-                <a href={basescanUrl(network, tx)} target="_blank" rel="noreferrer">
-                  {truncateHash(tx)}
-                </a>
-              ) : (
-                <span />
-              )}
-              {tx && <CopyButton value={tx} label="Tx" />}
-            </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ color: "var(--text-muted)" }}>
+                  {ts ? relativeTime(ts) : "unknown date"} •{" "}
+                  <span style={{ color: "var(--text)" }}>{String(row.agent_id ?? row.product_id ?? "unknown")}</span>
+                </div>
+                <div className="mono" style={{ marginTop: 4 }}>
+                  <a href={basescanUrl(row.network ?? "eip155:8453", row.tx)} target="_blank" rel="noreferrer" style={{ color: "var(--amber)" }}>
+                    {truncateHash(row.tx)}
+                  </a>
+                  {row.run_id && (
+                    <span style={{ marginLeft: 8, color: "var(--text-muted)" }}>
+                      run: {truncateHash(row.run_id)}
+                      <CopyButton value={row.run_id} />
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="mono" style={{ color, fontSize: 13, fontWeight: "bold", marginLeft: 16 }}>
+                {kind === "revenue" ? "+" : "-"}{formatUsdcAtomic(atomic)}
+              </div>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 }

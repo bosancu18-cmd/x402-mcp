@@ -10,7 +10,7 @@ import httpx
 from app.city_compliance.models import CitySpec, base_report
 
 # Using the ArcGIS MapServer endpoint for San Diego STRO licenses
-ARCGIS_URL = "https://maps.sandiego.gov/server/rest/services/Treasurer/STRO_ACTIVE_LICENSES/MapServer/0/query"
+ARCGIS_URL = "https://webmaps.sandiego.gov/arcgis/rest/services/Treasurer/STRO_ACTIVE_LICENSES/MapServer/0/query"
 
 SPEC = CitySpec(
     code="sd",
@@ -68,10 +68,10 @@ async def check_property(address: str) -> dict[str, Any]:
     registrations = [
         {
             "address": r.get("ADDRESS"),
-            "license_number": r.get("LICENSE_ACCOUNT_NO"),
-            "license_tier": r.get("LICENSE_TIER"),
-            "expiration_date": r.get("EXPIRATION_DATE"),
-            "status": "Active", # All items in this dataset are active
+            "license_number": r.get("LICENSE_ID") or r.get("LICENSE_ACCOUNT_NO"),
+            "license_tier": r.get("TIER") or r.get("LICENSE_TIER"),
+            "expiration_date": r.get("DATE_EXPIRATION") or r.get("EXPIRATION_DATE"),
+            "status": "Active",  # All items in this dataset are active
         }
         for r in rows
     ]

@@ -15,6 +15,7 @@ import { SellerWizard } from "./components/SellerWizard";
 import { VirtualizedLedger } from "./components/VirtualizedLedger";
 import { WalletPanel } from "./components/WalletPanel";
 import { OperatorHeader } from "./components/OperatorHeader";
+import { McpInstructions } from "./components/McpInstructions";
 import { demoActivity, demoDoctor, demoOs, demoRevenue, demoSpend, demoStats } from "./fixtures/demo";
 import { explain } from "./glossary";
 import { useSSE, type StreamEvent } from "./hooks/useSSE";

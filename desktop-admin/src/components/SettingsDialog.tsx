@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { isValidApiBase, writeStoredApiBase } from "../config";
-import { setApiBase } from "../api/client";
+import { isValidApiBase, writeStoredApiBase, readStoredOperatorToken, writeStoredOperatorToken } from "../config";
+import { setApiBase, setOperatorToken } from "../api/client";
 
 type SettingsDialogProps = {
   open: boolean;
@@ -17,6 +17,7 @@ const PRESETS = [
 
 export function SettingsDialog({ open, apiBase, onClose, onSaved }: SettingsDialogProps) {
   const [draft, setDraft] = useState(apiBase);
+  const [tokenDraft, setTokenDraft] = useState(() => readStoredOperatorToken());
   const [error, setError] = useState<string | null>(null);
 
   if (!open) return null;
@@ -28,6 +29,8 @@ export function SettingsDialog({ open, apiBase, onClose, onSaved }: SettingsDial
       return;
     }
     writeStoredApiBase(trimmed);
+    writeStoredOperatorToken(tokenDraft);
+    setOperatorToken(tokenDraft);
     setApiBase(trimmed);
     onSaved(trimmed);
     onClose();
@@ -67,6 +70,16 @@ export function SettingsDialog({ open, apiBase, onClose, onSaved }: SettingsDial
             }}
             style={{ width: "100%", marginTop: 4 }}
             placeholder="http://127.0.0.1:8402"
+          />
+</label>
+        <label style={{ display: "block", marginBottom: 8 }}>
+          <span style={{ fontSize: 13 }}>Operator Token</span>
+          <input
+            type="password"
+            value={tokenDraft}
+            onChange={(e) => setTokenDraft(e.target.value)}
+            style={{ width: "100%", marginTop: 4 }}
+            placeholder="OPERATOR_TOKEN from your environment"
           />
         </label>
         {error && <p style={{ color: "var(--red)", fontSize: 13 }}>{error}</p>}
