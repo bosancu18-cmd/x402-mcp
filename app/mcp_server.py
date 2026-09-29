@@ -156,9 +156,16 @@ async def _execute_tool(
     except QuotaExceededError as exc:
         return json.dumps({"error": exc.detail, "data": None, "meta": None}, indent=2)
 
-    data = await work(resolved)
+    from mcp.types import CallToolResult, TextContent
+    try:
+        data = await work(resolved)
+    except Exception as exc:
+        import traceback
+        return CallToolResult(
+            isError=True,
+            content=[TextContent(type="text", text=f"Tool execution failed: {exc}\n{traceback.format_exc()}")]
+        )
     
-    from mcp.types import CallToolResult
     if isinstance(data, CallToolResult):
         return data
 
