@@ -585,6 +585,7 @@ export default function App() {
       </div>
 
       <main className="grid-12">
+        <McpInstructions />
         <div className="hide-mobile" style={{ gridColumn: "span 12" }}>
           <ParallaxProtocolHero telemetry={telemetry} />
         </div>
