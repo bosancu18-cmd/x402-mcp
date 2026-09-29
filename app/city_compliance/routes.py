@@ -139,7 +139,7 @@ async def us_city_property_check(
     output_example = mod.discovery_output_example()
     try:
         payment_required = gate.build_payment_required_header(
-            spec, input_example=input_example, output_example=output_example
+            spec, input_example=input_example, output_example=output_example, address=address
         )
     except Exception:
         log.warning("us/%s/property-check: cannot build challenge", spec.code, exc_info=True)
