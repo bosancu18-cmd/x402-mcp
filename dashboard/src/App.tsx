@@ -189,7 +189,7 @@ export default function App() {
             raw_score: 3.9,
             blocked_by: [],
             human_gated: false,
-            status_note: "LEGACY per PRODUCT-FOCUS + live /demand: thousands of challenges, ~0% external conversion. Delisting cliff has passed.",
+            status_note: "LEGACY per PRODUCT-FOCUS + live /demand: thousands of challenges, ~0% external conversion. Free-RPC arithmetic a buyer can inline. Stay deployed as a legacy reference; no features, no re-index settles, no lead outreach. Delisting cliff (2026-08-21) has passed.",
             next_action: "Do nothing on this product.",
           },
         ],
