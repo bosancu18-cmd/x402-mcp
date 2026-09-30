@@ -32,9 +32,9 @@ export function ActiveStorefront({
   const baseCalls: ActiveCall[] = [
     {
       id: "call-mn",
-      name: "Minneapolis Open-Data Compliance",
+      name: "MARC-HD Compliance Verification",
       path: "/mn/property-check",
-      priceUsdc: 0.01,
+      priceUsdc: 0.85,
       costBasisUsdc: 0.0,
       category: "Canonical Data",
       views: 142,
