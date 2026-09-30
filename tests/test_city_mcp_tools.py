@@ -85,66 +85,83 @@ async def test_check_us_city_property_invalid_address() -> None:
 async def test_check_us_city_property_no_wallet_handoff(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(settings, "evm_private_key", None)
+
     async def fake_probe(params):  # noqa: ANN001
-        return {"payment_required": {"price": "0.10"}, "payment_required_header": "test-b64"}
+        return {
+            "status_code": 402,
+            "url": str(params.url),
+            "sdk": "mock-probe",
+            "payment_required": {"x402Version": 2},
+        }
 
     monkeypatch.setattr(city_mcp.x402_services, "get_payment_requirements", fake_probe)
 
-    res = await city_mcp.check_us_city_property("chi", "121 N LaSalle St")
-    assert getattr(res, "isError", False) is True
-    assert (res.model_dump().get("meta") or res.model_dump().get("_meta") or {}).get("x402/payment-required") == "test-b64"
+    data = await city_mcp.check_us_city_property("mn", "1700 Penn Ave N")
+    assert data["paid"] is False
+    assert data["reason"] == "buyer_wallet_not_configured"
+    assert data["city"] == "mn"
+    assert "address=" in data["paid_url"]
+    assert data["payment_probe"]["status_code"] == 402
+    assert data["mcp"]["tool"] == "check_us_city_property"
+    assert "pay_and_fetch" in data["mcp"]["alternate_tool"]
+
 
 @pytest.mark.asyncio
 async def test_check_us_city_property_with_wallet_pay_and_fetch(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # Simulates what happens when a signature IS provided in ctx
-    class FakeReq:
-        class Params:
-            meta = {"x402/payment": "fake-sig"}
-        params = Params()
-        
-    class FakeCtx:
-        class ReqCtx:
-            request = FakeReq()
-        request_context = ReqCtx()
-        
-    import httpx
-    
-    class FakeResponse:
-        status_code = 200
-        headers = {"PAYMENT-RESPONSE": "test-b64"}
-        text = '{"compliance_verdict": "paid_ok"}'
-        def json(self):
-            return {"compliance_verdict": "paid_ok"}
-            
-    class FakeClient:
-        async def __aenter__(self): return self
-        async def __aexit__(self, *args): pass
-        async def get(self, *args, **kwargs): return FakeResponse()
+    monkeypatch.setattr(settings, "evm_private_key", "0x" + "ab" * 32)
 
-    monkeypatch.setattr(httpx, "AsyncClient", lambda **kw: FakeClient())
+    async def fake_pay(params):  # noqa: ANN001
+        return {
+            "status_code": 200,
+            "url": str(params.url),
+            "body": {"compliance_verdict": "paid_ok"},
+            "sdk": "mock-pay",
+        }
 
-    data = await city_mcp.check_us_city_property("chi", "121 N LaSalle St", ctx=FakeCtx())
-    assert getattr(data, "isError", True) is False
-    assert (data.model_dump().get("meta") or data.model_dump().get("_meta") or {}).get("x402/payment-response") == "test-b64"
+    monkeypatch.setattr(city_mcp.x402_services, "pay_and_fetch", fake_pay)
+
+    data = await city_mcp.check_us_city_property("chi", "121 N LaSalle St")
+    assert data["paid"] is True
+    assert data["city"] == "chi"
+    assert data["result"]["body"]["compliance_verdict"] == "paid_ok"
+
 
 @pytest.mark.asyncio
 async def test_check_us_city_property_mcp_wrapper_no_wallet(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    monkeypatch.setattr(settings, "evm_private_key", None)
+
     async def fake_probe(params):  # noqa: ANN001
-        return {"payment_required": {"price": "0.10"}, "payment_required_header": "test-b64"}
+        return {"status_code": 402, "url": str(params.url)}
 
     monkeypatch.setattr(city_mcp.x402_services, "get_payment_requirements", fake_probe)
 
-    # Note: the test used to call mcp_server.check_us_city_property
     raw = await mcp_server.check_us_city_property(
         city_code="nyc",
         address="1 Centre St",
-        ctx=None,
         agent_id="city-paid-agent",
     )
-    import json
-    # _execute_tool intercepts CallToolResult and returns it directly now
-    assert getattr(raw, "isError", False) is True
+    payload = json.loads(raw)
+    assert payload["meta"]["agent_id"]
+    assert payload["data"]["paid"] is False
+    assert payload["data"]["city"] == "nyc"
+
+
+def test_city_tools_in_registry() -> None:
+    for name in (
+        "city.list",
+        "city.sample",
+        "city.check",
+    ):
+        assert name in EXPECTED_TOOL_NAMES
+
+
+def test_city_check_description_advertises_price() -> None:
+    from app.tools_registry import TOOL_SPECS
+
+    spec = next(s for s in TOOL_SPECS if s["name"] == "city.check")
+    assert "Price: $0.01 per call (x402, USDC on Base/Solana/Arbitrum)." in spec["description"]

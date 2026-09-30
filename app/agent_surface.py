@@ -24,6 +24,7 @@ BASE_USDC = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 DEFAULT_PAY_TO = "0x05e1720bB82F86B5bc7940a99FDC702E32256357"
 # A2A × x402 extension URI (x402 foundation transport + google-a2a a2a-x402).
 A2A_X402_EXTENSION_URI = "https://github.com/google-a2a/a2a-x402/v0.1"
+AP2_EXTENSION_URI = "https://github.com/google-agentic-commerce/ap2/v1"
 REPO_URL = "https://github.com/kwizzlesurp10-ctrl/x402-mcp"
 BOUNTIES_DOC_URL = f"{REPO_URL}/blob/master/docs/BOUNTIES.md"
 FUNDING_LEGAL = (
@@ -602,15 +603,33 @@ def agent_card() -> dict[str, Any]:
             ],
             "inputModes": ["application/json"],
             "outputModes": ["application/json"],
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "properties": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "city_code": {"type": "string", "description": "City code (e.g. mn, sea, chi, nyc, atx, bna, phx)"},
+                                "address": {"type": "string", "description": "Street address string"},
+                            },
+                            "required": ["city_code", "address"],
+                        },
+                        "description": "List of city codes and street addresses to screen",
+                    },
+                    "include_base_pulse_context": {"type": "boolean", "default": False},
+                },
+                "required": ["properties"],
+            },
         },
         {
             "id": "mailrail-postmaster",
             "name": "MailRail Postmaster & In/Out Dispatcher",
             "description": (
-                "Dedicated operator MailRail postmaster agent (id x402-mailrail-postmaster). "
-                "Not a public MCP/Smithery tool. HTTP inbound/ledger/inbox/stats require "
-                "Authorization Bearer OPERATOR_TOKEN and X-Agent-Id: x402-mailrail-postmaster. "
-                f"Card: GET {base}/agent/mailrail. Health: GET {base}/mailrail/health."
+                "Operator-only communications rail for settlement receipts and inbound "
+                "postmaster ingest. Not a public MCP tool. HTTP inbound/ledger/inbox/stats "
+                f"require Authorization Bearer OPERATOR_TOKEN. Health: GET {base}/mailrail/health."
             ),
             "tags": [
                 "mailrail",
@@ -752,6 +771,7 @@ def agent_card() -> dict[str, Any]:
             "streaming": False,
             "pushNotifications": False,
             "extendedAgentCard": False,
+            "stateTransitionHistory": True,
             "extensions": [
                 {
                     "uri": A2A_X402_EXTENSION_URI,
@@ -760,7 +780,12 @@ def agent_card() -> dict[str, Any]:
                         f"USDC settlement on {network} to payTo {pay_to}."
                     ),
                     "required": False,
-                }
+                },
+                {
+                    "uri": AP2_EXTENSION_URI,
+                    "description": "Google Agent Payments Protocol (AP2) mandate and authorization layer",
+                    "required": False,
+                },
             ],
         },
         "defaultInputModes": ["text/plain", "application/json"],
@@ -967,8 +992,8 @@ def agents_json() -> dict[str, Any]:
             "id": "x402-mailrail-postmaster",
             "name": "MailRail Postmaster & In/Out Dispatcher",
             "description": (
-                "Dedicated operator MailRail postmaster agent. Not public. "
-                "Requires OPERATOR_TOKEN and X-Agent-Id: x402-mailrail-postmaster."
+                "Dedicated gateway for inbound agent message/webhook ingestion, "
+                "outbound transactional receipt dispatching, mention defusing, and delivery telemetry."
             ),
             "roi_value_proposition": (
                 "Ensures guaranteed zero-spam deduplication and mention-safe routing for inter-agent workflows."
@@ -1288,10 +1313,7 @@ def agentic_market_json() -> dict[str, Any]:
             "id": "x402-mailrail-postmaster",
             "name": "MailRail Postmaster & In/Out Dispatcher",
             "type": "communication-rail",
-            "description": (
-                "Operator MailRail postmaster only. Requires OPERATOR_TOKEN and "
-                "X-Agent-Id: x402-mailrail-postmaster. Not listed on public MCP."
-            ),
+            "description": "Inbound agent message ingestion, receipt tracking, and mention-defused routing.",
             "url": f"{base}/mailrail/inbound",
             "method": "POST",
             "pricing": {

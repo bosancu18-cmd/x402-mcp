@@ -211,6 +211,13 @@ def test_agent_card_declares_x402_extension_and_funding() -> None:
     assert body["funding"]["assetSymbol"] == "USDC"
 
 
+def test_agent_card_declares_ap2_extension() -> None:
+    body = client.get("/.well-known/agent-card.json").json()
+    exts = body["capabilities"].get("extensions") or []
+    assert any("ap2" in (e.get("uri") or "") for e in exts)
+    assert body["capabilities"].get("stateTransitionHistory") is True
+
+
 def test_well_known_x402_includes_payto() -> None:
     body = client.get("/.well-known/x402").json()
     assert body["payTo"].lower().startswith("0x")

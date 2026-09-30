@@ -59,7 +59,7 @@ The public seller host holds **no spend key** — it only verifies and settles i
 
 ## Features
 
-- **19 MCP tools** for buyer, seller, x402 commerce, swarm-agency, US city compliance, Agent ID cards, and ops-monitoring flows — canonical inventory in `app/tools_registry.py` (single source for README, `/.well-known/mcp`, and tests); guarded by `tests/test_readme.py` and `tests/test_manifest.py`. MailRail send/inbound is operator-only ([docs/MAILRAIL-PUBLIC-SURFACE.md](docs/MAILRAIL-PUBLIC-SURFACE.md)).
+- **20 MCP tools** for buyer, seller, x402 commerce, swarm-agency, US city compliance, Agent ID cards, and ops-monitoring flows — canonical inventory in `app/tools_registry.py` (single source for README, `/.well-known/mcp`, and tests); guarded by `tests/test_readme.py` and `tests/test_manifest.py`. MailRail send/inbound is operator-only ([docs/MAILRAIL-PUBLIC-SURFACE.md](docs/MAILRAIL-PUBLIC-SURFACE.md)).
 - **4 MCP prompts** (`onboarding_flow`, `x402_tool_selector`, `generate_quote`, `troubleshoot_payment`) for LLM orchestrators
 - **4 MCP resources** (`x402://agent-card`, `x402://server-card`, `x402://tools-manifest`, `x402://pricing-table`) exposing live machine descriptors
 - **A2A Protocol v1.0 Agent ID Cards** — HTTP Agent Card + MCP `x402.agent_card` / `x402://agent-card` with per-`agent_id` quota isolation
@@ -137,11 +137,12 @@ data are intentionally never served. Public records, as-is; not legal advice.
 
 ## MCP Tools
 
-Tool names use domain.action trees so clients can route `x402.*`, `commerce.*`, `swarm.*`, `pulse.*`, `ops.*`, and `city.*`.
+Tool names use domain.action trees so clients can route `x402.*`, `a2a.*`, `commerce.*`, `swarm.*`, `pulse.*`, `ops.*`, and `city.*`.
 
 | Tool | Description |
 |------|-------------|
 | `x402.agent_card` | Return the A2A Agent ID Card and MCP server card |
+| `a2a.resolve_card` | Discover and inspect an external A2A Agent Card by domain or URL |
 | `x402.discover` | Query x402 Bazaar for paid HTTP APIs |
 | `x402.probe` | Probe URL for `PAYMENT-REQUIRED` on 402 |
 | `x402.pay_and_fetch` | Auto-pay and fetch protected resource |

@@ -33,19 +33,14 @@ def build_payment_required_header(
     *,
     input_example: dict[str, Any],
     output_example: dict[str, Any],
-    address: str | None = None,
 ) -> str:
     from app import challenge_cache
     from app.models import BuildSellerRequirementsInput
     from app.x402_services import build_seller_requirements
-    from urllib.parse import quote
 
     network = settings.x402_default_network
     price = price_for(city)
     res = resource_url(city)
-    if address:
-        res = f"{res}?address={quote(address, safe='')}"
-    
     tags = list(city.tags)
     fp = challenge_cache.fingerprint(
         network=network,
