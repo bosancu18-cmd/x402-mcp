@@ -86,7 +86,7 @@ function MailList({
         <ul style={{ listStyle: "none", padding: 0, maxHeight: 220, overflow: "auto" }}>
           {items.map((m, i) => (
             <li
-              key={`${m.event_id ?? m.inbound_id}-${i}`}
+              key={m.event_id ?? m.inbound_id ?? `${kind}-${i}`}
               style={{
                 fontSize: 12,
                 marginBottom: 8,

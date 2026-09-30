@@ -86,11 +86,14 @@ async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
     # Rebuild the pinned listing BEFORE serving: the purchase URL is in the
     # Bazaar catalog, so the first request after a cold start may well be a
     # buyer. Bounded and non-fatal — a slow RPC must not stall the boot.
+    pulse_refresh = None
     if settings.pinned_pulse_product_id:
         from app.swarm import publisher
 
         with suppress(asyncio.TimeoutError):
             await asyncio.wait_for(publisher.restore_pinned_listing(), timeout=45.0)
+        if "PYTEST_CURRENT_TEST" not in os.environ:
+            pulse_refresh = asyncio.create_task(publisher.pulse_refresh_loop())
     try:
         if _mcp_http_app is not None:
             async with mcp.session_manager.run():
@@ -106,6 +109,10 @@ async def _lifespan(_: FastAPI) -> AsyncIterator[None]:
             warmer_task.cancel()
             with suppress(asyncio.CancelledError):
                 await warmer_task
+        if pulse_refresh:
+            pulse_refresh.cancel()
+            with suppress(asyncio.CancelledError):
+                await pulse_refresh
 
 
 class UpstashAnalyticsMiddleware(BaseHTTPMiddleware):
@@ -147,6 +154,8 @@ def _cors_origins() -> list[str]:
     origins = [
         "https://x402-mission-control.vercel.app",
         "https://kwizzle-landing-page.onrender.com",
+        "https://kwizzlesurp.com",
+        "https://www.kwizzlesurp.com",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:5174",
@@ -697,10 +706,19 @@ async def stats_snapshot() -> dict:
 
 
 def _mailrail_operator_guard(request: Request) -> None:
-    """Fail closed: OPERATOR_TOKEN plus the MailRail postmaster agent id."""
-    from app.mailrail_agent import authorize_http
-
-    authorize_http(request)
+    """Fail closed: MailRail message surfaces need OPERATOR_TOKEN bearer auth."""
+    token = settings.operator_token
+    if not token:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "error": "unauthorized",
+                "detail": "MailRail send/inbound/ledgers require OPERATOR_TOKEN",
+            },
+        )
+    auth = request.headers.get("Authorization", "")
+    if auth != f"Bearer {token}":
+        raise HTTPException(status_code=401, detail={"error": "unauthorized"})
 
 
 @app.get("/mailrail/health")
@@ -710,17 +728,7 @@ async def mailrail_health() -> dict:
         "ok": True,
         "enabled": settings.mailrail_enabled,
         "provider": settings.mailrail_provider,
-        "agent_id": "x402-mailrail-postmaster",
-        "public": False,
     }
-
-
-@app.get("/agent/mailrail")
-async def mailrail_agent_card() -> dict:
-    """Public card for the dedicated MailRail postmaster agent (no ledgers)."""
-    from app.mailrail_agent import agent_card
-
-    return agent_card()
 
 
 @app.get("/mailrail/ledger")

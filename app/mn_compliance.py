@@ -115,17 +115,6 @@ async def _query(
     return [f["attributes"] for f in payload.get("features", [])]
 
 
-async def _query_dataset(
-    client: httpx.AsyncClient, datasets: tuple[str, ...], where: str, out_fields: str, limit: int
-) -> list[dict]:
-    for dataset in datasets:
-        try:
-            return await _query(client, dataset, where, out_fields, limit)
-        except Exception:
-            continue
-    return []
-
-
 async def check_property(address: str) -> dict[str, Any]:
     """Compose the compliance report for a Minneapolis street address."""
     needle = _escape(address.strip().upper())
@@ -150,27 +139,27 @@ async def check_property(address: str) -> dict[str, Any]:
             import asyncio
             apn_list = ", ".join(f"'{_escape(a)}'" for a in apns)
             violations, condemned = await asyncio.gather(
-                _query_dataset(
+                _query(
                     client,
-                    ("CaseViolations", "CaseInspections"),
+                    "CaseViolations",
                     f"APN IN ({apn_list})",
                     VIOLATION_FIELDS,
                     200,
                 ),
-                _query_dataset(
+                _query(
                     client,
-                    ("Condemned_by_Boarding",),
+                    "Condemned_by_Boarding",
                     f"APN IN ({apn_list})",
                     CONDEMNED_FIELDS,
                     10,
-                ),
+                )
             )
         else:
             # No license found — still check condemned/boarded by address so a
             # completely unlicensed problem property is not reported as clean.
-            condemned = await _query_dataset(
+            condemned = await _query(
                 client,
-                ("Condemned_by_Boarding",),
+                "Condemned_by_Boarding",
                 f"UPPER(Address) LIKE '{needle}%'",
                 CONDEMNED_FIELDS,
                 10,

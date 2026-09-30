@@ -52,14 +52,14 @@ Fiat Sponsors (GitHub Sponsors / Polar / thanks.dev) do **not** credit `payTo` o
 | Product | Price | What you get |
 |---------|-------|--------------|
 | `GET /mn/property-check?address=…` | $0.01 USDC | Minneapolis rental-compliance snapshot composed from 3 live City of Minneapolis open datasets — the first machine-payable housing-compliance data for agents |
-| `GET /us/{code}/property-check?address=…` | $0.01 USDC | **US City Open-Data Compliance Network** (14 jurisdictions) — same wire protocol; free catalog `/us/cities` + free `/sample`; MCP: `city.list` → `city.sample` → `city.check` |
+| `GET /us/{code}/property-check?address=…` | $0.01 USDC | **US City Open-Data Compliance Network** (public catalog; see `/us/cities`) — same wire protocol; free catalog `/us/cities` + free `/sample`; MCP: `city.list` → `city.sample` → `city.check` |
 | `GET /swarm/products/d22bbf5f3c4b4666a6f80980c7bc7c50/purchase` | $0.05 USDC | Base Network Pulse: live settlement-conditions intelligence (EIP-1559 math + real RPC + ETH spot), pinned listing with the x402 Bazaar discovery extension |
 
 The public seller host holds **no spend key** — it only verifies and settles inbound payments ([docs/SELLER-STOREFRONT.md](docs/SELLER-STOREFRONT.md)). Roadmap: [ROADMAP.md](ROADMAP.md).
 
 ## Features
 
-- **19 MCP tools** for buyer, seller, x402 commerce, swarm-agency, US city compliance, Agent ID cards, and ops-monitoring flows — canonical inventory in `app/tools_registry.py` (single source for README, `/.well-known/mcp`, and tests); guarded by `tests/test_readme.py` and `tests/test_manifest.py`. MailRail send/inbound is operator-only ([docs/MAILRAIL-PUBLIC-SURFACE.md](docs/MAILRAIL-PUBLIC-SURFACE.md)).
+- **20 MCP tools** for buyer, seller, x402 commerce, swarm-agency, US city compliance, Agent ID cards, and ops-monitoring flows — canonical inventory in `app/tools_registry.py` (single source for README, `/.well-known/mcp`, and tests); guarded by `tests/test_readme.py` and `tests/test_manifest.py`. MailRail send/inbound is operator-only ([docs/MAILRAIL-PUBLIC-SURFACE.md](docs/MAILRAIL-PUBLIC-SURFACE.md)).
 - **4 MCP prompts** (`onboarding_flow`, `x402_tool_selector`, `generate_quote`, `troubleshoot_payment`) for LLM orchestrators
 - **4 MCP resources** (`x402://agent-card`, `x402://server-card`, `x402://tools-manifest`, `x402://pricing-table`) exposing live machine descriptors
 - **A2A Protocol v1.0 Agent ID Cards** — HTTP Agent Card + MCP `x402.agent_card` / `x402://agent-card` with per-`agent_id` quota isolation
@@ -137,11 +137,12 @@ data are intentionally never served. Public records, as-is; not legal advice.
 
 ## MCP Tools
 
-Tool names use domain.action trees so clients can route `x402.*`, `commerce.*`, `swarm.*`, `pulse.*`, `ops.*`, and `city.*`.
+Tool names use domain.action trees so clients can route `x402.*`, `a2a.*`, `commerce.*`, `swarm.*`, `pulse.*`, `ops.*`, and `city.*`.
 
 | Tool | Description |
 |------|-------------|
 | `x402.agent_card` | Return the A2A Agent ID Card and MCP server card |
+| `a2a.resolve_card` | Discover and inspect an external A2A Agent Card by domain or URL |
 | `x402.discover` | Query x402 Bazaar for paid HTTP APIs |
 | `x402.probe` | Probe URL for `PAYMENT-REQUIRED` on 402 |
 | `x402.pay_and_fetch` | Auto-pay and fetch protected resource |

@@ -1,4 +1,4 @@
-import { readStoredApiBase, readStoredOperatorToken } from "../config";
+import { readStoredApiBase } from "../config";
 
 export type StatsResponse = {
   agents: Array<{
@@ -274,18 +274,8 @@ export function setApiBase(url: string): void {
 export const API_BASE = apiBase;
 export const API = apiBase;
 
-let currentOperatorToken = readStoredOperatorToken();
-export function setOperatorToken(token: string) { currentOperatorToken = token; }
-
 async function getJson<T>(path: string): Promise<T> {
-  const headers: Record<string, string> = {};
-  if (currentOperatorToken) {
-    headers["Authorization"] = `Bearer ${currentOperatorToken}`;
-  }
-  if (path.startsWith("/mailrail")) {
-    headers["x-agent-id"] = "x402-mailrail-postmaster";
-  }
-  const res = await fetch(`${getApiBase()}${path}`, { headers });
+  const res = await fetch(`${getApiBase()}${path}`);
   if (!res.ok) throw new Error(`${path} failed: ${res.status}`);
   return res.json() as Promise<T>;
 }
