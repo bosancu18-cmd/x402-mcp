@@ -172,10 +172,10 @@ _ROUTES: list[dict[str, Any]] = [
                   "tool_leverage": 0.5, "defensibility": 0.15, "impact": 0.15},
         "prereqs": ["seller_ready", "settlement_mainnet"],
         "status_note": (
-            "DEMOTED per PRODUCT-FOCUS + live /demand: thousands of challenges, "
+            "LEGACY per PRODUCT-FOCUS + live /demand: thousands of challenges, "
             "~0% external conversion. Free-RPC arithmetic a buyer can inline. "
-            "Stay deployed; no features, no re-index settles, no lead outreach. "
-            "Delisting cliff ~2026-08-21 is intentional."
+            "Stay deployed as a legacy reference; no features, no re-index "
+            "settles, no lead outreach. Delisting cliff (2026-08-21) has passed."
         ),
         "next_action": (
             "Do nothing on this product. Do not change PINNED_PULSE_PRODUCT_ID. "
