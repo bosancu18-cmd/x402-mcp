@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from mcp.server.fastmcp import Context
 import json
 from collections.abc import Awaitable, Callable
 from typing import Annotated, Any
@@ -146,8 +147,8 @@ mcp = FastMCP(
 async def _execute_tool(
     tool_name: str,
     agent_id: str | None,
-    work: Callable[[str], Awaitable[dict[str, Any]]],
-) -> str:
+    work: Callable[[str], Awaitable[Any]],
+) -> dict[str, Any]:
     """Preemptive quota enforcement, then execute work, then attach meta."""
     resolved = quota_store.resolve_agent_id(agent_id)
     try:
@@ -156,6 +157,11 @@ async def _execute_tool(
         return json.dumps({"error": exc.detail, "data": None, "meta": None}, indent=2)
 
     data = await work(resolved)
+    
+    from mcp.types import CallToolResult
+    if isinstance(data, CallToolResult):
+        return data
+
     meta = quota_store.build_meta(snapshot)
     emit_tool_event(tool_name, resolved, meta.model_dump())
     payload = ToolResponse(data=data, meta=meta)
@@ -914,6 +920,7 @@ async def check_us_city_property(
             description="Street address to check. Example: '1700 Penn Ave N' or '1 Centre St'."
         ),
     ],
+    ctx: Context,
     max_price_usdc: Desc[
         float | None,
         Field(description="Optional USDC spend ceiling. Example: 0.05."),
@@ -926,7 +933,7 @@ async def check_us_city_property(
         str | None,
         Field(description="Optional agent identity for quota accounting."),
     ] = None,
-) -> str:
+) -> dict[str, Any]:
     from app.city_compliance import mcp_tools as city_mcp
 
     return await _execute_tool(
@@ -935,6 +942,7 @@ async def check_us_city_property(
         lambda resolved: city_mcp.check_us_city_property(
             city_code,
             address,
+            ctx=ctx,
             max_price_usdc=max_price_usdc,
             preferred_network=preferred_network,
             agent_id=resolved,
@@ -965,6 +973,11 @@ async def mailrail_send(
     ] = None,
 ) -> str:
     from app import mailrail
+    from app.mailrail_agent import refuse_if_not_mailrail_agent
+
+    refused = refuse_if_not_mailrail_agent(agent_id)
+    if refused:
+        return json.dumps(refused, indent=2)
 
     return await _execute_tool(
         "mailrail.send",
@@ -990,6 +1003,11 @@ async def mailrail_status(
     ] = None,
 ) -> str:
     from app.config import settings
+    from app.mailrail_agent import refuse_if_not_mailrail_agent
+
+    refused = refuse_if_not_mailrail_agent(agent_id)
+    if refused:
+        return json.dumps(refused, indent=2)
 
     return await _execute_tool(
         "mailrail.status",
@@ -1028,6 +1046,11 @@ async def mailrail_inbound(
     ] = None,
 ) -> str:
     from app import mailrail
+    from app.mailrail_agent import refuse_if_not_mailrail_agent
+
+    refused = refuse_if_not_mailrail_agent(agent_id)
+    if refused:
+        return json.dumps(refused, indent=2)
 
     return await _execute_tool(
         "mailrail.inbound",
@@ -1222,7 +1245,7 @@ async def _sync_result(data: dict[str, Any]) -> dict[str, Any]:
     return data
 
 
-def _simplify_schema(schema: Any) -> Any:
+def _simplify_schema(schema: Any) -> dict[str, Any]:
     if not isinstance(schema, dict):
         return schema
     new_schema = schema.copy()
