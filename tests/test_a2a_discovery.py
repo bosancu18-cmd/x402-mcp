@@ -76,3 +76,15 @@ async def test_resolve_agent_card_ssrf_blocked_fails_closed() -> None:
     result = await resolve_agent_card("http://127.0.0.1:8000/agent.json")
     assert result["status"] == "unresolved"
     assert "SSRF" in result["error"] or "blocked" in result["error"].lower()
+
+
+def test_a2a_resolve_http_endpoint_ssrf_blocked() -> None:
+    from fastapi.testclient import TestClient
+    from app.main import app
+
+    client = TestClient(app)
+    response = client.get("/a2a/resolve", params={"url": "http://127.0.0.1:8000/agent.json"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "unresolved"
+    assert "SSRF" in data["error"] or "blocked" in data["error"].lower()

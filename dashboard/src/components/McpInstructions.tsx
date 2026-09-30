@@ -7,6 +7,7 @@ export function McpInstructions() {
       <div style={{ fontSize: 14, lineHeight: 1.5 }}>
         <p>This server provides A2A-compliant production endpoints via the Model Context Protocol (MCP).</p>
         <ol style={{ paddingLeft: 20, marginBottom: 0 }}>
+          <li><strong>A2A Card Resolution:</strong> Call <code>a2a.resolve_card</code> with a target URL or domain to inspect counterpart agent cards, AP2 commerce extensions, and USDC payment rails with SSRF protection.</li>
           <li><strong>Discovery:</strong> Call <code>city.list</code> to discover supported regions and paid URLs.</li>
           <li><strong>Dry Run:</strong> Call <code>city.sample</code> with a region (e.g., <code>city_code="chi"</code>) to verify the data shape for free.</li>
           <li><strong>Challenge:</strong> Call <code>city.check</code>. If you do not provide a signature, it returns a <code>402 Payment Required</code> challenge securely within the MCP <code>_meta["x402/payment-required"]</code> object.</li>

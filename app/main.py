@@ -47,6 +47,7 @@ from app.models import BuildSellerRequirementsInput, GetPaymentRequirementsInput
 
 from app.ops_events import event_stream, format_sse
 from app.payment_rails import build_payment_rails
+from app.a2a_discovery import resolve_agent_card
 from app.probe_rate_limit import ProbeRateLimitExceeded, probe_rate_limiter
 from app.ssrf_guard import SSRFBlockedError, validate_probe_url
 from app.swarm import orchestrator as swarm_orchestrator
@@ -923,6 +924,29 @@ async def probe_url(
         # Upstream unreachable/timeout — a clean 502, not an opaque 500.
         raise HTTPException(
             status_code=502, detail="upstream probe target unreachable"
+        ) from exc
+
+
+@app.get("/a2a/resolve")
+async def a2a_resolve_endpoint(
+    request: Request,
+    url: str = Query(description="Target origin or agent card URL to resolve"),
+) -> dict:
+    """Resolve an external A2A Agent Card by domain or URL — SSRF-guarded."""
+    client_ip = request.client.host if request.client else "unknown"
+    try:
+        probe_rate_limiter.check(client_ip)
+        return await resolve_agent_card(url)
+    except ProbeRateLimitExceeded as exc:
+        raise HTTPException(
+            status_code=429,
+            detail={"error": "rate_limit_exceeded", "retry_after": exc.retry_after},
+        ) from exc
+    except SSRFBlockedError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except httpx.HTTPError as exc:
+        raise HTTPException(
+            status_code=502, detail="upstream a2a target unreachable"
         ) from exc
 
 
