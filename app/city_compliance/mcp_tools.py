@@ -180,38 +180,59 @@ async def check_us_city_property(
     city_code: str,
     address: str,
     *,
-    ctx: Any = None,
     max_price_usdc: float | None = None,
     preferred_network: str | None = None,
     agent_id: str | None = None,
-) -> Any:
+) -> dict[str, Any]:
     """Paid compliance check via the live HTTP x402 resource.
 
-    Uses standard MCP payment rails via _meta.
+    With ``EVM_PRIVATE_KEY`` set, settles and returns the report body.
+    Without a buyer key, probes the 402 challenge and returns a handoff package
+    (no settlement) so agents still get a complete discovery → pay path.
     """
-    from mcp.types import CallToolResult, TextContent
-    import json as _json
-    import httpx
-
     resolved = _paid_url(city_code, address)
     if isinstance(resolved, dict):
+        agentmail.notify_city_call(
+            "error",
+            city_code=(city_code or "").strip().lower() or None,
+            channel="mcp",
+            agent_id=agent_id,
+            address=(address or "").strip() or None,
+            detail=str(resolved.get("error")),
+        )
         return resolved
     mod, url = resolved
     spec = mod.SPEC
     price = gate.price_for(spec)
+    sample = gate.sample_url(spec)
 
-    payment_signature = None
-    if ctx and hasattr(ctx, "request_context"):
-        req = ctx.request_context.request
-        if req and req.params and hasattr(req.params, "meta") and req.params.meta:
-            payment_signature = req.params.meta.get("x402/payment")
-
-    if not payment_signature:
+    if not settings.evm_private_key:
         probe = await x402_services.get_payment_requirements(
             GetPaymentRequirementsInput(url=url, method="GET")
         )
-        payment_required = probe.get("payment_required")
-        
+        handoff = {
+            "paid": False,
+            "reason": "buyer_wallet_not_configured",
+            "city": spec.code,
+            "address": address.strip(),
+            "paid_url": url,
+            "sample_url": sample,
+            "price": price,
+            "network": settings.x402_default_network,
+            "payment_probe": probe,
+            "how_to_pay": (
+                "Set EVM_PRIVATE_KEY on the MCP client host, then re-call "
+                "check_us_city_property (or pay_and_fetch on paid_url). "
+                f"Free shape check first: get_us_city_property_sample("
+                f"city_code={spec.code!r})."
+            ),
+            "mcp": {
+                "tool": "check_us_city_property",
+                "requires_env": ["EVM_PRIVATE_KEY"],
+                "alternate_tool": "pay_and_fetch",
+                "alternate_args": {"url": url, "method": "GET"},
+            },
+        }
         agentmail.notify_city_call(
             "paid_probe",
             city_code=spec.code,
@@ -224,38 +245,32 @@ async def check_us_city_property(
             paid=False,
             detail="buyer_wallet_not_configured",
         )
-        
-        if not payment_required:
-            return {"error": "challenge_failed", "probe": probe}
-            
-        return CallToolResult(
-            isError=True,
-            meta={"x402/payment-required": probe.get("payment_required_header")},
-            content=[TextContent(type="text", text=_json.dumps({
-                "error": "PaymentRequired",
-                "message": "This tool requires x402 payment.",
-                "payment_required": payment_required
-            }))]
-        )
+        return handoff
 
-    # We have a signature, make the request
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        resp = await client.get(url, headers={"PAYMENT-SIGNATURE": payment_signature})
-        
-    payment_response = resp.headers.get("PAYMENT-RESPONSE")
-    
-    if resp.status_code != 200:
-        return CallToolResult(
-            isError=True,
-            content=[TextContent(type="text", text=resp.text)]
+    result = await x402_services.pay_and_fetch(
+        PayAndFetchInput(
+            url=url,
+            method="GET",
+            preferred_network=preferred_network or settings.x402_default_network,
+            max_price_usdc=max_price_usdc,
         )
-        
-    body_report = None
+    )
+    settlement = result.get("payment_settlement") or {}
+    tx_hash = (
+        settlement.get("transaction")
+        or settlement.get("tx_hash")
+        or settlement.get("hash")
+    )
+    body_report: dict[str, Any] | None = None
     try:
-        body_report = resp.json()
-    except Exception:
-        pass
-        
+        import json as _json
+
+        parsed = _json.loads(result.get("body") or "{}")
+        if isinstance(parsed, dict):
+            body_report = parsed
+    except Exception:  # noqa: BLE001
+        body_report = None
+
     agentmail.notify_city_call(
         "paid_mcp",
         city_code=spec.code,
@@ -266,15 +281,16 @@ async def check_us_city_property(
         address=address.strip(),
         price=price,
         verdict=agentmail.verdict_from_report(body_report),
-        paid=True,
+        paid=bool(result.get("payment_settled")),
+        tx_hash=str(tx_hash) if tx_hash else None,
+        payer=str(settlement.get("payer")) if settlement.get("payer") else None,
     )
-    
-    meta_dict = {}
-    if payment_response:
-        meta_dict["x402/payment-response"] = payment_response
-
-    return CallToolResult(
-        isError=False,
-        meta=meta_dict if meta_dict else None,
-        content=[TextContent(type="text", text=resp.text)]
-    )
+    return {
+        "paid": True,
+        "city": spec.code,
+        "address": address.strip(),
+        "paid_url": url,
+        "price": price,
+        "network": settings.x402_default_network,
+        "result": result,
+    }

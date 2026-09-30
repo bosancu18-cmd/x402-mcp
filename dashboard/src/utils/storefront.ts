@@ -182,6 +182,16 @@ const FREE_BAZAAR_ENTRIES: BazaarEntry[] = [
     path: "/us/sea/property-check/sample",
     description: "Canonical free-sample Resource URL for the US city network.",
   },
+  {
+    id: "a2a-agent-card",
+    name: "A2A & AP2 Agent Card Discovery",
+    category: "A2A Discovery (free)",
+    priceUsdc: 0,
+    network: "Base Mainnet (8453)",
+    path: "/.well-known/agent-card.json",
+    description:
+      "A2A v0.1 agent card with AP2 v1 commerce extension, Base USDC cashier rails, and us-rental-diligence-pack skill schema.",
+  },
 ];
 
 /** Live storefront resources only — no third-party or fabricated listings. */
