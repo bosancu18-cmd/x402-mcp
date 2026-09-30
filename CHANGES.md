@@ -4,6 +4,16 @@ This file documents deltas **only** within this repository (`x402-mcp/`).
 If this clone sits inside a larger parent workspace, use this manifest for goal
 verification instead of a repo-wide `git status` of the parent tree.
 
+## A2A Discovery & AP2 Protocol Expansion (2026-09-29)
+
+- Aligned with Google Agent Payments Protocol (AP2 v1): declared `AP2_EXTENSION_URI` in `app/agent_surface.py` under `capabilities.extensions` alongside `a2a-x402`, with `stateTransitionHistory: True`
+- Enriched `us-rental-diligence-pack` skill schema with explicit multi-city input properties
+- Added active A2A Agent Card discovery module `app/a2a_discovery.py` with URL candidate normalization, SSRF protection (`app.ssrf_guard`), extension inspection, payment rail extraction, and fail-closed resolution
+- Registered new MCP tool `a2a.resolve_card` in `app/tools_registry.py` and FastMCP in `app/mcp_server.py`; bumped `TOOL_COUNT` from 19 to 20
+- Synchronized `README.md` (`20 MCP tools`, `a2a.*` domain routing, tools table)
+- Added zero-spend CDP Bazaar preflight validation CLI `scripts/validate_bazaar_endpoint.py`
+- Added comprehensive unit tests in `tests/test_a2a_discovery.py` and AP2 extension assertion in `tests/test_agent_surface.py`
+
 ## Wallet rotation + `.keys` gitignore (2026-09-20)
 
 - Generated new hot-buyer and cold-receive keypairs after prior `.keys/*.key` files were public on GitHub

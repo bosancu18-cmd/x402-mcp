@@ -8,7 +8,7 @@
   "packageManager": "pnpm@9.15.4",
   "scripts": {
     "dev": "vite",
-    "dev:electron": "concurrently -k \"vite\" \"wait-on http://127.0.0.1:5174 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5174 electron . --no-sandbox --remote-debugging-port=9222\"",
+    "dev:electron": "concurrently -k \"vite\" \"wait-on http://127.0.0.1:5174 && cross-env VITE_DEV_SERVER_URL=http://127.0.0.1:5174 electron .\"",
     "build": "vite build",
     "build:electron": "pnpm build && electron-builder --dir",
     "preview": "vite preview",
@@ -28,12 +28,12 @@
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3",
-    "electron": "^34.2.0",
+    "electron": "^39.8.10",
     "electron-builder": "^25.1.8",
     "jsdom": "^29.1.1",
     "typescript": "~5.7.2",
     "vite": "^6.0.5",
-    "vitest": "^3.0.5",
+    "vitest": "^4.1.11",
     "wait-on": "^8.0.2"
   },
   "build": {

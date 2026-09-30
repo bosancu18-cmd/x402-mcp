@@ -174,6 +174,15 @@ TOOL_SPECS: tuple[ToolSpec, ...] = (
         "tier": "free",
         "requires_env": ["EVM_PRIVATE_KEY"],
     },
+    {
+        "name": "a2a.resolve_card",
+        "description": (
+            "Discover and inspect an external Agent-to-Agent (A2A) node by domain or URL. "
+            "Fetches .well-known/agent-card.json, validates protocol compatibility, checks for "
+            "a2a-x402 and AP2 payment extensions, and extracts callable skills with pricing."
+        ),
+        "tier": "free",
+    },
 )
 
 EXPECTED_TOOL_NAMES: frozenset[str] = frozenset(spec["name"] for spec in TOOL_SPECS)
