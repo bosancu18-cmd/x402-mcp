@@ -76,7 +76,7 @@ Free samples: `GET /pulse` (Base Network Pulse preview), `GET /us/cities`, `GET 
 - **Payer class:** external first-time (`is_operator_settle: false`); wallet appears once
 - **Payer:** `0x7ef12be65ed6ec9d8a89c414662e2ac471154ae2`
 - **Tx:** https://basescan.org/tx/0x87811a9be488a36e8334e309672e9792cc0086afe10fe370c89a374ed41cda97 (block 50961197, 2026-09-06 16:22:21 UTC)
-- **payTo:** live cashier `0x05e1720bB82F86B5bc7940a99FDC702E32256357` (the receive address used at sale time was later rotated; do not pay retired prefixes)
+- **payTo:** live cashier `0x05e1720bB82F86B5bc7940a99FDC702E32256357` (the receive address used at sale time was later rotated from  original dev-wallet address meant for demo / testing) (corrected path) ; do not pay retired (dev-wwalet) prefixes)
 - **Not** the first-ever external sale (that remains `0xadacdfdd` on 2026-07-22, later-repriced Pulse)
 - SKU stays **demoted** under `docs/PRODUCT-FOCUS.md` (0.11% conversion; reversal clause is ~1%)
 

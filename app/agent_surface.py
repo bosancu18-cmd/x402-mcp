@@ -607,9 +607,10 @@ def agent_card() -> dict[str, Any]:
             "id": "mailrail-postmaster",
             "name": "MailRail Postmaster & In/Out Dispatcher",
             "description": (
-                "Operator-only communications rail for settlement receipts and inbound "
-                "postmaster ingest. Not a public MCP tool. HTTP inbound/ledger/inbox/stats "
-                f"require Authorization Bearer OPERATOR_TOKEN. Health: GET {base}/mailrail/health."
+                "Dedicated operator MailRail postmaster agent (id x402-mailrail-postmaster). "
+                "Not a public MCP/Smithery tool. HTTP inbound/ledger/inbox/stats require "
+                "Authorization Bearer OPERATOR_TOKEN and X-Agent-Id: x402-mailrail-postmaster. "
+                f"Card: GET {base}/agent/mailrail. Health: GET {base}/mailrail/health."
             ),
             "tags": [
                 "mailrail",
@@ -966,8 +967,8 @@ def agents_json() -> dict[str, Any]:
             "id": "x402-mailrail-postmaster",
             "name": "MailRail Postmaster & In/Out Dispatcher",
             "description": (
-                "Dedicated gateway for inbound agent message/webhook ingestion, "
-                "outbound transactional receipt dispatching, mention defusing, and delivery telemetry."
+                "Dedicated operator MailRail postmaster agent. Not public. "
+                "Requires OPERATOR_TOKEN and X-Agent-Id: x402-mailrail-postmaster."
             ),
             "roi_value_proposition": (
                 "Ensures guaranteed zero-spam deduplication and mention-safe routing for inter-agent workflows."
@@ -1287,7 +1288,10 @@ def agentic_market_json() -> dict[str, Any]:
             "id": "x402-mailrail-postmaster",
             "name": "MailRail Postmaster & In/Out Dispatcher",
             "type": "communication-rail",
-            "description": "Inbound agent message ingestion, receipt tracking, and mention-defused routing.",
+            "description": (
+                "Operator MailRail postmaster only. Requires OPERATOR_TOKEN and "
+                "X-Agent-Id: x402-mailrail-postmaster. Not listed on public MCP."
+            ),
             "url": f"{base}/mailrail/inbound",
             "method": "POST",
             "pricing": {
