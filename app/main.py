@@ -503,24 +503,28 @@ def _landing_page_html(request: Request) -> str:
 """
 
 
+_MISSION_CONTROL_CSP = (
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; "
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; "
+    "font-src 'self' data: https://fonts.gstatic.com; "
+    "img-src 'self' data: blob: android-webview-video-poster:; "
+    "connect-src 'self' ws: wss: https://*.render.com; "
+    "frame-src 'self'; "
+    "object-src 'none';"
+)
+_MISSION_CONTROL_HEADERS = {
+    "Cache-Control": "no-store",
+    "Content-Security-Policy": _MISSION_CONTROL_CSP,
+}
+
+
 @app.get("/", include_in_schema=False, response_class=HTMLResponse)
 async def root(request: Request) -> HTMLResponse:
     """Serve the React Mission Control Dashboard."""
     return HTMLResponse(
         _mission_control_html(),
-        headers={
-            "Cache-Control": "no-store",
-            "Content-Security-Policy": (
-                "default-src 'self'; "
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com; "
-                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; "
-                "font-src 'self' data: https://fonts.gstatic.com; "
-                "img-src 'self' data: blob: android-webview-video-poster:; "
-                "connect-src 'self' ws: wss: https://*.render.com; "
-                "frame-src 'self'; "
-                "object-src 'none';"
-            )
-        }
+        headers=_MISSION_CONTROL_HEADERS,
     )
 
 
@@ -570,7 +574,7 @@ async def dashboard() -> HTMLResponse:
     """React Mission Control SPA (Vercel layout), same-origin API."""
     return HTMLResponse(
         _mission_control_html(),
-        headers={"Cache-Control": "no-store"},
+        headers=_MISSION_CONTROL_HEADERS,
     )
 
 
