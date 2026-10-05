@@ -240,12 +240,11 @@ def process_inbound_mail(
         "to": settings.mailrail_from_address,
         "subject": clean_subject,
         "timestamp": now_iso,
-        "agent_id": (metadata or {}).get("agent_id") if metadata else None,
+        "agent_id": inbound_meta.get("agent_id"),
     }
     try:
-        from app.mailrail_agent import AGENT_ID, notify_operator
+        from app.mailrail_agent import notify_operator
 
-        result["agent_id"] = result["agent_id"] or AGENT_ID
         result["operator_notify"] = notify_operator(
             f"[MailRail inbound] {clean_subject}",
             f"From: {sender}\n\n{clean_body}",
