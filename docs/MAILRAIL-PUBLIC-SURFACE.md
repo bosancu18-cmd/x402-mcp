@@ -24,7 +24,7 @@ That is open-relay + inbox disclosure on a public seller host. **Do not list the
 | `GET /mailrail/health` | Yes, readiness only | `enabled` and `provider`. No admin recipient, from-address, or key flags. |
 | Internal `mailrail.send_agent_mail` from settlement code | Yes (server-side) | Not an HTTP/MCP public tool |
 
-Live send stays off (`MAILRAIL_ENABLED` false, provider `mock`) until the operator sets it on the host. Do not put `MAILRAIL_API_KEY`, `MAILRAIL_WEBHOOK_URL`, or `GITHUB_TOKEN` in `render.yaml`.
+The seller sets `MAILRAIL_ENABLED=true` and `MAILRAIL_PROVIDER=mock`. Mock records mail and does not call Resend or a webhook. Do not put `MAILRAIL_API_KEY`, `MAILRAIL_WEBHOOK_URL`, or `GITHUB_TOKEN` in `render.yaml`.
 
 Public Smithery catalog is x402 / commerce / swarm / pulse / ops / city only.
 
