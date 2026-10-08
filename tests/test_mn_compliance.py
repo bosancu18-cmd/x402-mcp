@@ -247,6 +247,7 @@ def test_malformed_signature_is_402_not_500(monkeypatch: pytest.MonkeyPatch) -> 
     assert body.get("invalid_reason")
 
 
+
 # ---- data layer against a mock ArcGIS backend -------------------------------
 
 _LICENSES = {
@@ -322,7 +323,9 @@ def mock_arcgis(monkeypatch: pytest.MonkeyPatch) -> str:
     port = server.server_address[1]
     threading.Thread(target=server.serve_forever, daemon=True).start()
     monkeypatch.setattr(settings, "mn_data_base_url", f"http://127.0.0.1:{port}")
+    mn_compliance._cache.clear()
     yield f"http://127.0.0.1:{port}"
+    mn_compliance._cache.clear()
     server.shutdown()
 
 
@@ -331,13 +334,19 @@ async def test_check_property_composes_report(mock_arcgis: str) -> None:
     report = await mn_compliance.check_property("1700 Penn Ave N")
 
     assert report["licensed"] is True
-    assert report["compliance_verdict"] == "licensed_with_violations"
+    # Abate + Closed is history. It stays in the report and is not an open case.
+    assert report["compliance_verdict"] == "licensed_clean"
     license_record = report["rental_licenses"][0]
     assert license_record["license_number"] == "LIC394217"
     assert license_record["tier"] == "Tier 1"
     assert license_record["expiration_date"] == "2027-03-01"
-    assert report["violation_cases"]["total"] >= 1
-    assert "case_number" in report["violation_cases"]["recent"][0]
+    cases = report["violation_cases"]
+    assert cases["total"] >= 1
+    assert cases["open"] == 0
+    assert cases["abated"] >= 1
+    recent = cases["recent"][0]
+    assert recent["case_number"] == "RS-2025-01"
+    assert recent["inspection_result"] == "Abate"
     assert report["condemned_or_boarded"]["flagged"] is False
     assert "disclaimer" in report
     # owner contact details must never be served
