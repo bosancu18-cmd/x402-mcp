@@ -710,20 +710,23 @@ async def stats_snapshot() -> dict:
     return data
 
 
-def _mailrail_operator_guard(request: Request) -> None:
-    """Fail closed: MailRail message surfaces need OPERATOR_TOKEN bearer auth."""
-    token = settings.operator_token
-    if not token:
-        raise HTTPException(
-            status_code=401,
-            detail={
-                "error": "unauthorized",
-                "detail": "MailRail send/inbound/ledgers require OPERATOR_TOKEN",
-            },
-        )
-    auth = request.headers.get("Authorization", "")
-    if auth != f"Bearer {token}":
-        raise HTTPException(status_code=401, detail={"error": "unauthorized"})
+def _mailrail_operator_guard(request: Request) -> str:
+    """Fail closed: OPERATOR_TOKEN plus an allowlisted MailRail agent.
+
+    Missing or wrong bearer is 401. A bearer with no agent, or the wrong
+    agent, is 403. Health stays public and does not use this guard.
+    """
+    from app.mailrail_agent import authorize_http
+
+    return authorize_http(request)
+
+
+@app.get("/agent/mailrail")
+async def mailrail_agent_card() -> dict:
+    """Postmaster card. public is false: not a Smithery tool and no message bodies."""
+    from app.mailrail_agent import agent_card
+
+    return agent_card()
 
 
 @app.get("/mailrail/health")
@@ -749,15 +752,17 @@ async def mailrail_ledger(request: Request, limit: int = 50) -> dict:
 @app.post("/mailrail/inbound")
 async def mailrail_inbound(request: Request, payload: models.InboundMailInput) -> dict:
     """Ingest inbound postmaster mail. Operator-only."""
-    _mailrail_operator_guard(request)
+    agent_id = _mailrail_operator_guard(request)
     from app.mailrail import process_inbound_mail
 
-    return process_inbound_mail(
+    received = process_inbound_mail(
         sender=payload.sender,
         subject=payload.subject,
         body=payload.body,
         metadata=payload.metadata,
     )
+    received["agent_id"] = agent_id
+    return received
 
 
 @app.get("/mailrail/inbox")
