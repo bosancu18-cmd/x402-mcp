@@ -358,6 +358,136 @@ async def test_check_property_escapes_quotes(mock_arcgis: str) -> None:
     assert report["licensed"] is False
 
 
+def test_closed_case_is_not_an_open_violation() -> None:
+    row = {
+        "Status_Violation_Case": "Closed",
+        "Status_Violation": "Abate",
+        "Milestone_Violation_Case": "Case Closed",
+    }
+    assert mn_compliance._violation_is_open(row) is False
+
+
+def test_open_case_status_is_an_open_violation() -> None:
+    assert mn_compliance._violation_is_open(
+        {"Status_Violation_Case": "Open", "Status_Violation": "N/O"}
+    ) is True
+    # Legacy fixture shape (Inspection_Result only) still counts as open.
+    assert mn_compliance._violation_is_open(
+        {"Inspection_Result": "Violations Found"}
+    ) is True
+
+
+@pytest.mark.asyncio
+async def test_abated_history_stays_licensed_clean(monkeypatch: pytest.MonkeyPatch) -> None:
+    """1700 Penn Ave N shape: every line Closed/Abate must not read as a violation."""
+    mn_compliance._cache.clear()
+
+    async def fake_query(client, dataset, where, out_fields, limit):  # noqa: ARG001
+        if dataset == "Active_Rental_Licenses":
+            return [
+                {
+                    "address": "1700 PENN AVE N",
+                    "apn": "1602924320087",
+                    "licenseNumber": "LIC394217",
+                    "status": "Active",
+                    "tier": "Tier 1",
+                    "category": "CONV",
+                    "licensedUnits": 1,
+                    "ownerName": "EXAMPLE",
+                    "issueDate": 1621814400000,
+                    "expirationDate": 1803859200000,
+                    "ward": "5",
+                    "neighborhoodDesc": "Willard - Hay",
+                    "communityDesc": "Near North",
+                    "shortTermRental": "No",
+                }
+            ]
+        if dataset == "CaseViolations":
+            assert "Status_Violation_Case" in out_fields
+            assert "Inspection_Result" not in out_fields
+            return [
+                {
+                    "APN": "1602924320087",
+                    "Violation_Case_Number": "CE1263963",
+                    "Case_Type": "HIS",
+                    "Case_Group": "HISINSP",
+                    "Status_Violation": "Abate",
+                    "Status_Violation_Case": "Closed",
+                    "Milestone_Violation_Case": "Case Closed",
+                    "Violation_Code": "HIS180",
+                    "Violation_Code_Description": "Obtain Rental License; MCO 244.1810",
+                    "Processed_Date": 1619517469000,
+                    "Resolved_Date": 1624529137000,
+                }
+            ]
+        return []
+
+    monkeypatch.setattr(mn_compliance, "_query", fake_query)
+    report = await mn_compliance.check_property("1700 Penn Ave N abated")
+    assert report["compliance_verdict"] == "licensed_clean"
+    assert report["violation_cases"]["total"] == 1
+    assert report["violation_cases"]["open"] == 0
+    assert report["violation_cases"]["closed"] == 1
+    recent = report["violation_cases"]["recent"][0]
+    assert recent["violation_code"] == "HIS180"
+    assert recent["inspection_result"] == "Abate"
+    assert recent["open"] is False
+    assert recent["case_status"] == "Closed"
+    assert "all closed/abated" in report["buyer_summary"]
+    assert "ownerPhone" not in json.dumps(report)
+
+
+@pytest.mark.asyncio
+async def test_open_violation_line_sets_licensed_with_violations(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    mn_compliance._cache.clear()
+
+    async def fake_query(client, dataset, where, out_fields, limit):  # noqa: ARG001
+        if dataset == "Active_Rental_Licenses":
+            return [
+                {
+                    "address": "1 OPEN ST",
+                    "apn": "9",
+                    "licenseNumber": "LIC1",
+                    "status": "Active",
+                    "tier": "Tier 2",
+                    "category": "CONV",
+                    "licensedUnits": 2,
+                    "ownerName": "EXAMPLE",
+                    "issueDate": None,
+                    "expirationDate": None,
+                    "ward": "1",
+                    "neighborhoodDesc": "N",
+                    "communityDesc": "C",
+                    "shortTermRental": "No",
+                }
+            ]
+        if dataset == "CaseViolations":
+            return [
+                {
+                    "Violation_Case_Number": "CE9",
+                    "Case_Type": "HIS",
+                    "Case_Group": "HISRENTAL",
+                    "Status_Violation": "N/O",
+                    "Status_Violation_Case": "Open",
+                    "Milestone_Violation_Case": "Violations",
+                    "Violation_Code": "HIS320",
+                    "Violation_Code_Description": "Smoke Detectors",
+                    "Processed_Date": 1735689600000,
+                    "Resolved_Date": None,
+                }
+            ]
+        return []
+
+    monkeypatch.setattr(mn_compliance, "_query", fake_query)
+    report = await mn_compliance.check_property("1 Open St unique")
+    assert report["compliance_verdict"] == "licensed_with_violations"
+    assert report["violation_cases"]["open"] == 1
+    assert report["violation_cases"]["recent"][0]["open"] is True
+    assert "open violation" in report["buyer_summary"]
+
+
 def test_paid_request_records_revenue_ledger_row(
     monkeypatch: pytest.MonkeyPatch, tmp_path
 ) -> None:

@@ -72,6 +72,7 @@ async def check_property(address: str) -> dict[str, Any]:
         "state": SPEC.state,
         "address_queried": raw.get("address_queried") or address.strip(),
         "compliance_verdict": raw.get("compliance_verdict"),
+        "buyer_summary": raw.get("buyer_summary"),
         "registrations": registrations,
         "registered": bool(raw.get("licensed")),
         "violation_cases": viol,

@@ -1313,7 +1313,9 @@ async def mn_property_check_sample() -> JSONResponse:
             "sample_address": mn_compliance.SAMPLE_ADDRESS,
             "note": (
                 "Free fixed-address sample of the live join (3 City of Minneapolis "
-                "ArcGIS datasets). Query any other Minneapolis street address at "
+                "ArcGIS datasets). compliance_verdict counts OPEN violations only — "
+                "closed/abated history stays in violation_cases and does not flip "
+                "the verdict. Query any other Minneapolis street address at "
                 f"{mn_compliance.resource_url()} for "
                 f"{settings.mn_property_check_price} USDC (x402 on Base)."
             ),

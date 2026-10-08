@@ -52,8 +52,9 @@ LICENSE_FIELDS = (
     "licensedUnits,ownerName,ward,neighborhoodDesc,communityDesc,shortTermRental"
 )
 VIOLATION_FIELDS = (
-    "APN,Violation_Case_Number,Case_Type,Case_Group,Inspection_Result,"
-    "Inspection_Type_Desc,Start_Date,Completed_Date"
+    "APN,Violation_Case_Number,Case_Type,Case_Group,Status_Violation,"
+    "Status_Violation_Case,Milestone_Violation_Case,Violation_Code,"
+    "Violation_Code_Description,Processed_Date,Resolved_Date"
 )
 CONDEMNED_FIELDS = "APN,Address,VBR_Date,CONB,Ward,Neighborho"
 
@@ -93,6 +94,135 @@ def _iso(epoch_ms: Any) -> str | None:
     if not isinstance(epoch_ms, (int, float)):
         return None
     return datetime.fromtimestamp(epoch_ms / 1000, tz=timezone.utc).date().isoformat()
+
+
+# City of Minneapolis Regulatory Services case statuses, read off the live
+# CaseViolations layer (2026-10-08). The old outFields
+# (Inspection_Result, Inspection_Type_Desc, Start_Date, Completed_Date) are
+# not columns anymore — a query that names them is rejected, so a paid check
+# cannot see violations. Status_Violation "Abate" on a Closed case is history,
+# not an open violation. licensed_with_violations means at least one open line.
+_CLOSED_CASE_STATUS = frozenset(
+    {"closed", "cancelled", "canceled", "deleted", "void"}
+)
+_OPEN_CASE_STATUS = frozenset(
+    {
+        "open",
+        "in process",
+        "enforce",
+        "hold",
+        "pending",
+        "stop work",
+        "fireescrow",
+        "assessed",
+    }
+)
+_RESOLVED_VIOLATION_STATUS = frozenset(
+    {
+        "abate",
+        "cancel",
+        "cancelled",
+        "canceled",
+        "n/a",
+        "mitigate",
+        "cos",
+        "transfer",
+        "",
+    }
+)
+_CLOSED_MILESTONE = frozenset(
+    {"case closed", "closed", "cancelled", "canceled", "case cancelled"}
+)
+
+
+def _norm(value: Any) -> str:
+    return str(value or "").strip().lower()
+
+
+def _violation_is_open(row: dict) -> bool:
+    """True when this violation line is still actionable, not abated history."""
+    case = _norm(row.get("Status_Violation_Case"))
+    viol = _norm(row.get("Status_Violation") or row.get("Inspection_Result"))
+    milestone = _norm(row.get("Milestone_Violation_Case"))
+    if case in _CLOSED_CASE_STATUS:
+        return False
+    if case in _OPEN_CASE_STATUS:
+        return True
+    if milestone in _CLOSED_MILESTONE and viol in _RESOLVED_VIOLATION_STATUS:
+        return False
+    if viol in _RESOLVED_VIOLATION_STATUS and not case:
+        return False
+    if viol and viol not in _RESOLVED_VIOLATION_STATUS:
+        return True
+    if milestone and milestone not in _CLOSED_MILESTONE:
+        return True
+    return False
+
+
+def _epoch(row: dict, *keys: str) -> Any:
+    for key in keys:
+        if key in row and isinstance(row.get(key), (int, float)):
+            return row[key]
+    return 0
+
+
+def _violation_record(row: dict) -> dict[str, Any]:
+    open_line = _violation_is_open(row)
+    start = row.get("Processed_Date") if "Processed_Date" in row else row.get("Start_Date")
+    if "Resolved_Date" in row:
+        completed = row.get("Resolved_Date")
+    else:
+        completed = row.get("Completed_Date")
+    result = row.get("Status_Violation")
+    if result is None:
+        result = row.get("Inspection_Result")
+    return {
+        "case_number": row.get("Violation_Case_Number"),
+        "case_type": row.get("Case_Type"),
+        "case_group": row.get("Case_Group"),
+        "inspection_result": result,
+        "inspection_type": row.get("Violation_Code_Description")
+        or row.get("Inspection_Type_Desc"),
+        "violation_code": row.get("Violation_Code"),
+        "case_status": row.get("Status_Violation_Case"),
+        "milestone": row.get("Milestone_Violation_Case"),
+        "open": open_line,
+        "start_date": _iso(start),
+        "completed_date": _iso(completed),
+    }
+
+
+def _buyer_summary(
+    *,
+    licensed: bool,
+    verdict: str,
+    open_count: int,
+    closed_count: int,
+    condemned: bool,
+) -> str:
+    if condemned:
+        return (
+            "Condemned or boarded on City of Minneapolis records. "
+            "Do not treat the rental license as clear."
+        )
+    if not licensed:
+        tail = (
+            f" {open_count} open violation line(s) still on file."
+            if open_count
+            else " No condemned/boarded record on the address match."
+        )
+        return "No active Minneapolis rental license for this address." + tail
+    if verdict == "licensed_with_violations":
+        return (
+            f"Active rental license with {open_count} open violation line(s) "
+            f"and {closed_count} closed/abated. Not condemned."
+        )
+    if closed_count:
+        return (
+            f"Active rental license. {closed_count} historical violation line(s), "
+            "all closed/abated. Not condemned."
+        )
+    return "Active rental license. No violation lines and not condemned."
 
 
 async def _query(
@@ -166,20 +296,27 @@ async def check_property(address: str) -> dict[str, Any]:
             )
 
     recent_violations = sorted(
-        violations, key=lambda v: v.get("Start_Date") or 0, reverse=True
+        violations,
+        key=lambda v: (
+            0 if _violation_is_open(v) else 1,
+            -(_epoch(v, "Processed_Date", "Start_Date") or 0),
+        ),
     )[:10]
 
     licensed = bool(licenses)
     condemned_flagged = bool(condemned)
     violation_total = len(violations)
-    # One-token decision for agent buyers. Severity order: condemned >
-    # unlicensed > licensed-with-open-history > clean. Derived only from the
-    # three ArcGIS joins above — no scoring model.
+    open_count = sum(1 for v in violations if _violation_is_open(v))
+    closed_count = violation_total - open_count
+    # One-token decision for agent buyers. Severity: condemned > unlicensed >
+    # licensed with an OPEN violation line > clean. Abated/closed history stays
+    # in violation_cases but does not flip the verdict — that false positive
+    # was flagging fully abated rentals as licensed_with_violations.
     if condemned_flagged:
         compliance_verdict = "condemned_or_boarded"
     elif not licensed:
         compliance_verdict = "unlicensed"
-    elif violation_total > 0:
+    elif open_count > 0:
         compliance_verdict = "licensed_with_violations"
     else:
         compliance_verdict = "licensed_clean"
@@ -207,20 +344,18 @@ async def check_property(address: str) -> dict[str, Any]:
             for l in licenses
         ],
         "licensed": licensed,
+        "buyer_summary": _buyer_summary(
+            licensed=licensed,
+            verdict=compliance_verdict,
+            open_count=open_count,
+            closed_count=closed_count,
+            condemned=condemned_flagged,
+        ),
         "violation_cases": {
             "total": violation_total,
-            "recent": [
-                {
-                    "case_number": v.get("Violation_Case_Number"),
-                    "case_type": v.get("Case_Type"),
-                    "case_group": v.get("Case_Group"),
-                    "inspection_result": v.get("Inspection_Result"),
-                    "inspection_type": v.get("Inspection_Type_Desc"),
-                    "start_date": _iso(v.get("Start_Date")),
-                    "completed_date": _iso(v.get("Completed_Date")),
-                }
-                for v in recent_violations
-            ],
+            "open": open_count,
+            "closed": closed_count,
+            "recent": [_violation_record(v) for v in recent_violations],
         },
         "condemned_or_boarded": {
             "flagged": condemned_flagged,
