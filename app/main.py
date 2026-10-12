@@ -959,6 +959,92 @@ async def a2a_resolve_endpoint(
         ) from exc
 
 
+# ============================================================================
+# Standard x402 Facilitator Routes (/verify, /settle, /supported, /facilitator)
+# ============================================================================
+
+
+@app.get("/supported")
+@app.get("/facilitator/supported")
+async def facilitator_supported_endpoint() -> dict:
+    """Standard x402 Facilitator supported mechanisms & networks discovery."""
+    return x402_services.facilitator_supported()
+
+
+@app.get("/facilitator")
+async def facilitator_info_endpoint(request: Request) -> dict:
+    """Facilitator catalog & health endpoint.
+
+    Prevents 404s when developers or user agents probe the facilitator root URL.
+    """
+    base = _public_base_from_request(request)
+    return {
+        "service": "x402-facilitator",
+        "status": "ok",
+        "version": "v2",
+        "default_network": settings.x402_default_network,
+        "endpoints": {
+            "supported": f"{base}/supported",
+            "verify": f"{base}/verify",
+            "settle": f"{base}/settle",
+        },
+        "docs": "https://docs.x402.org",
+    }
+
+
+@app.post("/verify")
+@app.post("/facilitator/verify")
+async def facilitator_verify_endpoint(request: Request) -> JSONResponse:
+    """Standard x402 Facilitator verify endpoint.
+
+    Validates buyer signature against payment requirements before content release.
+    Accepts:
+      - Standard JSON: { "x402Version": 2, "paymentPayload": ..., "paymentRequirements": ... }
+      - Base64 / Header: { "payment_signature": "...", "payment_required": "..." }
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "isValid": False,
+                "is_valid": False,
+                "invalidReason": "malformed_request: invalid JSON",
+                "invalid_reason": "malformed_request: invalid JSON",
+            },
+        )
+    result = await x402_services.facilitator_verify(body)
+    return JSONResponse(status_code=200, content=result)
+
+
+@app.post("/settle")
+@app.post("/facilitator/settle")
+async def facilitator_settle_endpoint(request: Request) -> JSONResponse:
+    """Standard x402 Facilitator settle endpoint.
+
+    Broadcasts on-chain settlement via the configured relayer / CDP.
+    Accepts:
+      - Standard JSON: { "x402Version": 2, "paymentPayload": ..., "paymentRequirements": ... }
+      - Base64 / Header: { "payment_signature": "...", "payment_required": "..." }
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "success": False,
+                "error": "malformed_request: invalid JSON",
+                "txHash": None,
+                "transaction": None,
+            },
+        )
+    result = await x402_services.facilitator_settle(body)
+    status_code = 200 if result.get("success") else 400
+    return JSONResponse(status_code=status_code, content=result)
+
+
 @app.post("/seller/requirements")
 async def seller_requirements(body: SellerRequirementsRequest) -> dict:
     """Keyless seller requirements builder — gated behind DASHBOARD_ACTIONS."""
