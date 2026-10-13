@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import time
-from collections import defaultdict, deque
+from app.ip_sliding_window import RateLimitExceeded, SlidingWindowRateLimiter
 
 
 class ProbeRateLimitExceeded(Exception):
@@ -18,22 +17,13 @@ class ProbeRateLimiter:
     """In-memory sliding window: max 10 probes per minute per client IP."""
 
     def __init__(self, *, limit: int = 10, window_seconds: float = 60.0) -> None:
-        self._limit = limit
-        self._window = window_seconds
-        self._windows: dict[str, deque[float]] = defaultdict(deque)
+        self._limiter = SlidingWindowRateLimiter(limit=limit, window_seconds=window_seconds)
 
     def check(self, client_ip: str) -> None:
-        now = time.time()
-        window = self._windows[client_ip]
-        cutoff = now - self._window
-        while window and window[0] < cutoff:
-            window.popleft()
-
-        if len(window) >= self._limit:
-            retry_after = max(int(self._window - (now - window[0])), 1)
-            raise ProbeRateLimitExceeded(retry_after)
-
-        window.append(now)
+        try:
+            self._limiter.check(client_ip)
+        except RateLimitExceeded as exc:
+            raise ProbeRateLimitExceeded(exc.retry_after) from exc
 
 
 probe_rate_limiter = ProbeRateLimiter()

@@ -551,6 +551,14 @@ async def pay_and_fetch(params: PayAndFetchInput) -> dict[str, Any]:
     that asks for less than the cap, and warden computes its daily/monthly
     caps off that ledger.
     """
+    from app.buyer_spend_guard import assert_pay_and_fetch_allowed
+
+    assert_pay_and_fetch_allowed(
+        url=str(params.url),
+        max_price_usdc=params.max_price_usdc,
+        preferred_network=params.preferred_network,
+    )
+
     from x402 import NoMatchingRequirementsError
     from x402.http import x402HTTPClient
     from x402.http.clients import x402HttpxClient

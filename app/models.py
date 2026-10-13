@@ -5,6 +5,16 @@ from typing import Any, Literal
 from pydantic import BaseModel, Field, HttpUrl
 
 
+class AuthorshipMeta(BaseModel):
+    """Immutable provenance watermark for MCP JSON responses."""
+
+    project: str
+    repository: str
+    license: str
+    notice: str
+    contact: str
+
+
 class ResponseMeta(BaseModel):
     """Mandatory commerce meta envelope on every successful MCP tool response."""
 
@@ -23,6 +33,9 @@ class ResponseMeta(BaseModel):
     )
     upgrade_url: str = Field(description="URL for tier upgrade")
     agent_id: str = Field(description="Per-agent tracking identifier")
+    authorship: AuthorshipMeta = Field(
+        description="Project provenance (Apache-2.0 NOTICE watermark)"
+    )
 
 
 class ToolResponse(BaseModel):

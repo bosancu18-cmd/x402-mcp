@@ -155,6 +155,11 @@ class Settings(BaseSettings):
     # it is public and scrapeable by design, so keep it an address the operator
     # is happy to publish.
     contact_email: str = "kwizzlesurp10@gmail.com"
+    authorship_repository: str = "https://github.com/kwizzlesurp10-ctrl/x402-mcp"
+    authorship_notice_path: str = "/NOTICE"
+    payment_signature_rate_limit_enabled: bool = True
+    payment_signature_rate_limit_per_min: int = 30
+    buyer_spend_policy_enforced: bool = True
     # Comma-separated signatures proving the operator controls this origin.
     # x402scan reads these from OpenAPI `x-discovery.ownershipProofs` (preferred)
     # or the /.well-known/x402 fan-out, and upgrades a listing from "anyone can

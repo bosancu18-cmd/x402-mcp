@@ -44,3 +44,40 @@ This policy covers the x402-mcp codebase, its dependencies as used in the projec
 MailRail send/inbound and message ledgers are **operator-only**. They are not public MCP tools. HTTP ingest/ledger/inbox/stats require `Authorization: Bearer $OPERATOR_TOKEN` and fail closed if the token is unset. See [docs/MAILRAIL-PUBLIC-SURFACE.md](docs/MAILRAIL-PUBLIC-SURFACE.md).
 
 Thank you for helping keep x402-mcp and the agent commerce ecosystem secure.
+
+## Credential hygiene and git history
+
+### Preflight audit
+
+```bash
+bash scripts/audit_git_secrets.sh
+```
+
+If this reports committed `.env`, `.pem`, `.keys/`, or `id.json` blobs, run (with team
+coordination — rewrites history):
+
+```bash
+bash scripts/git_history_purge_secrets.sh
+```
+
+### Rotation checklist (local dev compromise or suspected leak)
+
+Rotate **all** of the following on the operator machine and hosting provider
+(Render, CDP portal, etc.):
+
+| Secret | Action |
+|--------|--------|
+| `EVM_PRIVATE_KEY` | Generate new burner EOA; fund minimally; update `.env` |
+| `SVM_PRIVATE_KEY` | New Solana burner; never recommit `id.json` |
+| `CDP_API_KEY_ID` / `CDP_API_KEY_SECRET` | Revoke in CDP portal; issue new Ed25519 key |
+| `OPERATOR_TOKEN` / Stripe keys | Rotate if `.env` was shared or committed |
+| GitHub PAT / deploy tokens | Revoke if `.env` or CI logs exposed them |
+
+Public seller deploys should keep `wallet_configured: false` on untrusted hosts;
+buyer keys belong only on operator-controlled machines with `ledger/policy.json`
+caps enabled (`BUYER_SPEND_POLICY_ENFORCED=true` by default).
+
+### IP debouncing
+
+Inbound `PAYMENT-SIGNATURE` attempts are rate-limited per IP before facilitator
+verify/settle. Tune with `PAYMENT_SIGNATURE_RATE_LIMIT_PER_MIN` (default `30`).

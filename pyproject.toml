@@ -3,6 +3,7 @@ name = "x402-mcp"
 version = "0.1.0"
 description = "Production MCP server for x402 HTTP micropayments (buyer + seller tooling)"
 readme = "README.md"
+license = "Apache-2.0"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.115.0",

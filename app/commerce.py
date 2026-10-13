@@ -23,7 +23,8 @@ from datetime import UTC, datetime
 from fastapi import HTTPException
 
 from app.config import settings
-from app.models import ResponseMeta
+from app.models import AuthorshipMeta, ResponseMeta
+from app.provenance import authorship_meta
 
 logger = logging.getLogger(__name__)
 
@@ -353,6 +354,7 @@ class InMemoryQuotaStore:
             tool_credits_remaining=snapshot.tool_credits_remaining,
             upgrade_url=settings.upgrade_url,
             agent_id=snapshot.agent_id,
+            authorship=AuthorshipMeta(**authorship_meta()),
         )
 
 

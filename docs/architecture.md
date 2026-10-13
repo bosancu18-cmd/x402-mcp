@@ -79,3 +79,9 @@ Separate from on-chain x402 micropayments:
 | stdio | `python run_stdio.py` |
 | HTTP + SSE | `uvicorn app.main:app --port 8402` |
 | Manifest | `GET /.well-known/mcp` |
+
+Paid seller SKUs return **`PAYMENT-RESPONSE` on ordinary HTTP 200 responses**;
+`GET /events` SSE is mission-control telemetry only. See
+[TRANSPORT-X402-SECURITY.md](TRANSPORT-X402-SECURITY.md).
+
+MCP tool responses include `meta.authorship` (Apache-2.0 NOTICE watermark).

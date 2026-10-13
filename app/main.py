@@ -48,6 +48,10 @@ from app.models import BuildSellerRequirementsInput, GetPaymentRequirementsInput
 from app.ops_events import event_stream, format_sse
 from app.payment_rails import build_payment_rails
 from app.a2a_discovery import resolve_agent_card
+from app.payment_signature_rate_limit import (
+    PaymentSignatureRateLimitExceeded,
+    payment_signature_rate_limiter,
+)
 from app.probe_rate_limit import ProbeRateLimitExceeded, probe_rate_limiter
 from app.ssrf_guard import SSRFBlockedError, validate_probe_url
 from app.swarm import orchestrator as swarm_orchestrator
@@ -190,6 +194,33 @@ app.add_middleware(
         "Last-Event-Id",
     ],
 )
+
+
+@app.middleware("http")
+async def debounce_payment_signature_attempts(request: Request, call_next):
+    """Rate-limit verify/settle attempts per IP before facilitator crypto work."""
+    signature = request.headers.get("PAYMENT-SIGNATURE") or request.headers.get(
+        "X-PAYMENT"
+    )
+    if signature:
+        client_ip = request.client.host if request.client else "unknown"
+        try:
+            payment_signature_rate_limiter.check(client_ip)
+        except PaymentSignatureRateLimitExceeded as exc:
+            return JSONResponse(
+                status_code=429,
+                headers={"Retry-After": str(exc.retry_after)},
+                content={
+                    "error": "payment_signature_rate_limit",
+                    "retry_after": exc.retry_after,
+                    "detail": (
+                        "Too many payment signature attempts from this IP; "
+                        "retry after debounce window."
+                    ),
+                },
+            )
+    return await call_next(request)
+
 
 _LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "0.0.0.0", "[::1]", "::1")
 

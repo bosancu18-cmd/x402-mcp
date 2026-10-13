@@ -1,11 +1,28 @@
 # Wallet split, public URL, and Bazaar listing
 
+## Burner-only development keys (mandatory)
+
+Never use a mainnet treasury wallet, hardware wallet seed, or personal Ethereum
+Mainnet EOA as `EVM_PRIVATE_KEY` in this repo. Development and CI must use
+**isolated burner EOAs** funded with minimal testnet USDC only.
+
+| Rule | Why |
+|------|-----|
+| One burner per chain role | Prevents cross-chain contamination (EVM buyer vs Solana `id.json` vs cold receive) |
+| Never commit `id.json`, `.pem`, or `.keys/*` | File-based keys are gitignored; history purge script lives in `scripts/git_history_purge_secrets.sh` |
+| Solana spends use `SVM_PRIVATE_KEY` env only | Do not point the app at `~/.config/solana/id.json` — copy the secret into env on the operator machine or use a dedicated key provider |
+| Rotate after any `.env` leak suspicion | See `SECURITY.md` credential rotation checklist |
+
+Mainnet receive addresses (`X402_PAY_TO_ADDRESS`) are **public seller config** —
+they must not share private key material with the hot buyer.
+
 ## Wallet roles
 
 | Role | Env / file | Purpose |
 |------|------------|---------|
-| **Hot buyer** | `EVM_PRIVATE_KEY` in `.env` | Only `pay_and_fetch` spends (testnet funded) |
+| **Hot buyer** | `EVM_PRIVATE_KEY` in `.env` (burner EOA only) | Only `pay_and_fetch` spends (testnet funded) |
 | **Cold receive** | `X402_PAY_TO_ADDRESS` + `.keys/cold-receive.key` | Seller `payTo` — revenue lands here |
+| **Solana buyer** | `SVM_PRIVATE_KEY` in `.env` (burner; never `id.json` in repo) | SVM listing / buyer tooling when enabled |
 
 `.keys/` is gitignored. Import the cold key into a wallet you control; **never** put it in `EVM_PRIVATE_KEY`.
 

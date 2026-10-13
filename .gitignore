@@ -28,3 +28,18 @@ secrets/
 # Wallet key material — addresses live in docs; private keys stay local
 .keys/**
 !.keys/README.txt
+
+# Multi-chain key files (never commit file-based signing material)
+*.pem
+*.key
+*.p12
+*.pfx
+**/id.json
+**/solana-id.json
+**/*-keypair.json
+**/keypair.json
+**/wallet.json
+**/service-account*.json
+**/credentials.json
+**/secrets.json
+.mcp.json.local
